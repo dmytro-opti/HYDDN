@@ -11,6 +11,26 @@
 *.sln.docstates
 *.env
 
+# AngularJS-specific files
+.angular/
+
+
+# Visual Studio Code files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Rider
+.idea/
+
+# Npm Packages
+node_modules/
+package-lock.json
+yarn.lock
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
