@@ -1,4 +1,4 @@
-namespace Interfaces.Models;
+namespace Traveller.AI.Domain.Models;
 
 public enum JourneyStatus
 {
