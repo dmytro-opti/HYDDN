@@ -2,15 +2,44 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TravellerAI", "TravellerAI\TravellerAI.csproj", "{987982DE-2B15-4B24-9959-640CDE522841}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Interfaces", "Interfaces\Interfaces.csproj", "{E271B38C-EC06-4545-ACAD-32591420F9FA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{987982DE-2B15-4B24-9959-640CDE522841}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{987982DE-2B15-4B24-9959-640CDE522841}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{987982DE-2B15-4B24-9959-640CDE522841}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{987982DE-2B15-4B24-9959-640CDE522841}.Debug|x64.Build.0 = Debug|Any CPU
+		{987982DE-2B15-4B24-9959-640CDE522841}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{987982DE-2B15-4B24-9959-640CDE522841}.Debug|x86.Build.0 = Debug|Any CPU
 		{987982DE-2B15-4B24-9959-640CDE522841}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{987982DE-2B15-4B24-9959-640CDE522841}.Release|Any CPU.Build.0 = Release|Any CPU
+		{987982DE-2B15-4B24-9959-640CDE522841}.Release|x64.ActiveCfg = Release|Any CPU
+		{987982DE-2B15-4B24-9959-640CDE522841}.Release|x64.Build.0 = Release|Any CPU
+		{987982DE-2B15-4B24-9959-640CDE522841}.Release|x86.ActiveCfg = Release|Any CPU
+		{987982DE-2B15-4B24-9959-640CDE522841}.Release|x86.Build.0 = Release|Any CPU
+		{E271B38C-EC06-4545-ACAD-32591420F9FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E271B38C-EC06-4545-ACAD-32591420F9FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E271B38C-EC06-4545-ACAD-32591420F9FA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E271B38C-EC06-4545-ACAD-32591420F9FA}.Debug|x64.Build.0 = Debug|Any CPU
+		{E271B38C-EC06-4545-ACAD-32591420F9FA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E271B38C-EC06-4545-ACAD-32591420F9FA}.Debug|x86.Build.0 = Debug|Any CPU
+		{E271B38C-EC06-4545-ACAD-32591420F9FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E271B38C-EC06-4545-ACAD-32591420F9FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E271B38C-EC06-4545-ACAD-32591420F9FA}.Release|x64.ActiveCfg = Release|Any CPU
+		{E271B38C-EC06-4545-ACAD-32591420F9FA}.Release|x64.Build.0 = Release|Any CPU
+		{E271B38C-EC06-4545-ACAD-32591420F9FA}.Release|x86.ActiveCfg = Release|Any CPU
+		{E271B38C-EC06-4545-ACAD-32591420F9FA}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal
