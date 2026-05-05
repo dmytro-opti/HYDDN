@@ -1,4 +1,4 @@
-﻿using TravellerAI.Domain.Enums;
+using TravellerAI.Domain.Enums;
 namespace TravellerAI.Domain.Models;
 public class PlaceModel
 {
