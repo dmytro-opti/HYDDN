@@ -11,7 +11,12 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\TravellerAI.Core\TravellerAI.Core.csproj" />
       <ProjectReference Include="..\TravellerAI.Domain\TravellerAI.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Controllers\" />
     </ItemGroup>
 
 </Project>
