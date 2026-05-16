@@ -1,7 +1,7 @@
 using MediatR;
 using TravellerAI.Domain.Models;
 
-namespace TravellerAI.Core.Features.BuildJourneyCommand;
+namespace TravellerAI.Core.Features.BuildTripCommand;
 
 public class BuildTripCommand : IRequest<Guid>
 {

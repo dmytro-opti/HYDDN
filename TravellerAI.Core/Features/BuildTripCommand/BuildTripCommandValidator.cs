@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace TravellerAI.Core.Features.BuildJourneyCommand;
+namespace TravellerAI.Core.Features.BuildTripCommand;
 
 public class BuildTripCommandValidator : AbstractValidator<BuildTripCommand>
 {
@@ -9,4 +9,4 @@ public class BuildTripCommandValidator : AbstractValidator<BuildTripCommand>
         RuleFor(input => input.User.Id)
             .NotNull().WithMessage("UserId cannot be null");
     }
-}
+} 
