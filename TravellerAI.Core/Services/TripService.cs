@@ -1,21 +1,21 @@
-using TravellerAI.Core.Features;
+using TravellerAI.Core.Features.BuildJourneyCommand;
 using TravellerAI.Core.Interfaces;
 
 namespace TravellerAI.Core.Services;
 
 public class TripService : ITripService
 {
-    public Task<int> CreateTrip(BuildTripCommand command)
+    public Task<Guid> CreateTrip(BuildTripCommand command)
     {
         throw new NotImplementedException();
     }
 
-    public Task<int> GetTrip(int tripId)
+    public Task<Guid> GetTrip(Guid tripId)
     {
         throw new NotImplementedException();
     }
 
-    public Task<int> DeleteTrip(int tripId)
+    public Task<Guid> DeleteTrip(Guid tripId)
     {
         throw new NotImplementedException();
     } 

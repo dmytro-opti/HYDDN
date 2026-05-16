@@ -5,17 +5,17 @@ namespace TravellerAI.Core.Services;
 
 public class JourneyService : IJourneyService
 {
-    public Task<int> CreateJourney(BuildJourneyCommand command)
+    public Task<Guid> CreateJourney(BuildJourneyCommand command)
     {
-        return Task.FromResult(0);
+        return Task.FromResult(Guid.NewGuid());
     }
 
-    public Task<int> GetJourney(int tripId)
+    public Task<Guid> GetJourney(Guid tripId)
     {
         return Task.FromResult(tripId);
     }
 
-    public Task<int> DeleteJourney(int tripId)
+    public Task<Guid> DeleteJourney(Guid tripId)
     {
         return Task.FromResult(tripId);
     }

@@ -5,7 +5,7 @@ using TravellerAI.Domain.Models;
 
 namespace TravellerAI.Core.Features.BuildJourneyCommand;
 
-public class BuildJourneyCommandHandler : IRequestHandler<BuildJourneyCommand, int>
+public class BuildJourneyCommandHandler : IRequestHandler<BuildJourneyCommand, Guid>
 {
     private readonly IJourneyService _journeyService;
     private readonly IUserService _userService;
@@ -15,7 +15,7 @@ public class BuildJourneyCommandHandler : IRequestHandler<BuildJourneyCommand, i
         _journeyService = journeyService;
         _userService = userService;
     }
-    public async Task<int> Handle(BuildJourneyCommand command, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(BuildJourneyCommand command, CancellationToken cancellationToken)
     {
         var user = await _userService.GetUserAsync(command.UserId);
 

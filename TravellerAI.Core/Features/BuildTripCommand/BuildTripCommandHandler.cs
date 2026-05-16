@@ -1,9 +1,9 @@
 using MediatR;
 using TravellerAI.Core.Interfaces;
 
-namespace TravellerAI.Core.Features;
+namespace TravellerAI.Core.Features.BuildJourneyCommand;
 
-public class BuildTripCommandHandler : IRequestHandler<BuildTripCommand, int>
+public class BuildTripCommandHandler : IRequestHandler<BuildTripCommand, Guid>
 {
     private readonly ITripService _tripService;
 
@@ -12,7 +12,7 @@ public class BuildTripCommandHandler : IRequestHandler<BuildTripCommand, int>
         _tripService = tripService;
     }
 
-    public async Task<int> Handle(BuildTripCommand command, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(BuildTripCommand command, CancellationToken cancellationToken)
     {
         return await _tripService.CreateTrip(command);
     }
