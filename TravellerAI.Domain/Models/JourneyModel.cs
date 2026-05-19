@@ -4,6 +4,8 @@ namespace TravellerAI.Domain.Models;
 
 public class JourneyModel
 {
+    public Guid Id { get; set; }
+    public Guid TripId { get; set; }
     public JourneyStatus Status { get; set; }
     public PeriodModel Period { get; set; }
     public BudgetModel Budget { get; set; }

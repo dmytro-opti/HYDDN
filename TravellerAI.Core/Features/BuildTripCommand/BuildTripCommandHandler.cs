@@ -11,9 +11,12 @@ public class BuildTripCommandHandler : IRequestHandler<BuildTripCommand, TripMod
     private readonly IBudgetService _budgetService;
     private readonly IBookingService _bookingService;
 
-    public BuildTripCommandHandler(ITripService tripService)
+    public BuildTripCommandHandler(ITripService tripService, IJourneyService journeyService, IBudgetService budgetService, IBookingService bookingService)
     {
         _tripService = tripService;
+        _journeyService = journeyService;
+        _budgetService = budgetService;
+        _bookingService = bookingService;
     }
 
     public async Task<TripModel> Handle(BuildTripCommand command, CancellationToken cancellationToken)

@@ -5,6 +5,7 @@ namespace TravellerAI.Domain.Models;
 public class UserInfoModel
 {
    // public TravelWithWhoModel TravelWithWho {get; set}
+   public Guid Id { get; set; }
     public UserModel User { get; set; }
     public List<string> Interests { get; set; }
     public string TravelStyle { get; set; }

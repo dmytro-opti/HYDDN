@@ -2,6 +2,7 @@ namespace TravellerAI.Domain.Models;
 // фільтр
 public class BudgetModel
 {
+    public Guid Id { get; set; }
     public RecommendationModel Recommendation { get; set; }
     public decimal Budget { get; set; } //Limit
     public decimal Total { get; set; }
