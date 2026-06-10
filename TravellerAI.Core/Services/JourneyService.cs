@@ -7,7 +7,7 @@ namespace TravellerAI.Core.Services;
 
 public class JourneyService : IJourneyService
 {
-    public Task<Guid> CreateJourney(BuildJourneyCommand command)
+    public Task<Guid> CreateJourney(JourneyModel journey)
     {
         return Task.FromResult(Guid.NewGuid());
     }

@@ -6,7 +6,7 @@ namespace TravellerAI.Core.Interfaces;
 
 public interface IJourneyService
 {
-    Task<Guid> CreateJourney(BuildJourneyCommand command);
+    Task<Guid> CreateJourney(JourneyModel journey);
     Task<JourneyModel> GetJourney(Guid tripId);
     Task<Guid> DeleteJourney(Guid tripId);
     Task SelectPeriod(JourneyModel journey, PeriodViewModel period);
