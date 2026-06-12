@@ -1,7 +1,5 @@
 using MediatR;
 using TravellerAI.Core.Interfaces;
-using TravellerAI.Domain.Exceptions;
-using TravellerAI.Domain.Models;
 
 namespace TravellerAI.Core.Features.AddBookingCommand;
 
@@ -47,9 +45,4 @@ public class AddBookingCommandHandler : IRequestHandler<AddBookingCommand, Guid>
         
         return Guid.NewGuid();
     }
-}
-
-public interface IUserService
-{
-    public Task<UserModel> GetUserAsync(Guid userId);
 }

@@ -12,15 +12,3 @@ public class LoggerService<T> : ILoggerService<T> where T : class
         Console.WriteLine($"[{DateTime.Now}]: {typeof(T).FullName} -- {level}: {message}");
     }
 }
-
-/*public class Work
-{
-    public void DoSomething()
-    {
-        LoggerService<ActivityModel> logger = new LoggerService<ActivityModel>();
-        logger.LogObject = new ActivityModel();
-        
-        LoggerService<BookingModel> bookingLogger = new LoggerService<BookingModel>();
-        bookingLogger.LogObject = new BookingModel();
-    }
-}*/

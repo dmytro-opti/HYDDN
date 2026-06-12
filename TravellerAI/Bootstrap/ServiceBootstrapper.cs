@@ -12,8 +12,10 @@ public static class ServiceBootstrapper
     /// <returns>The configured service collection.</returns>
     public static IServiceCollection RegisterApplicationServices(this IServiceCollection services)
     {
-        // Register Logger Service
         services.AddScoped(typeof(ILoggerService<>), typeof(LoggerService<>));
+        services.AddScoped(typeof(IUserService), typeof(UserService));
+        services.AddScoped(typeof(IJourneyService), typeof(JourneyService));
+        services.AddScoped(typeof(ITripService), typeof(TripService));
 
         return services;
     }

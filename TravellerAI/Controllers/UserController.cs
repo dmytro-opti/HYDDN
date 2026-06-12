@@ -1,11 +1,8 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using TravellerAI.Core.Features.BuildJourneyCommand;
 using TravellerAI.Core.Interfaces;
 using TravellerAI.Domain.Exceptions;
-using TravellerAI.Domain.ViewModels;
-using TravellerAI.Domain.ViewModels.Responses;
 
 namespace TravellerAI.WebApi.Controllers;
 
