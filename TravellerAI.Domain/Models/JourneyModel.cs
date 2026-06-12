@@ -13,5 +13,6 @@ public class JourneyModel
     public IEnumerable<ActivityModel> Activities { get; set; }
     public IEnumerable<BookingModel> Bookings { get; set; }
     public UserModel User { get; set; }
+
 }
 

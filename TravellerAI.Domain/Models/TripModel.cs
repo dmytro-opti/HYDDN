@@ -12,5 +12,4 @@ public class TripModel
     public MapModel Map { get; set; }
     public PeriodModel Period { get; set; }
     public double Rating { get; set; }
-
 }

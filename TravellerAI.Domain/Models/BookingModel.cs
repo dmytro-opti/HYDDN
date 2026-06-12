@@ -8,6 +8,7 @@ namespace TravellerAI.Domain.Models;
     public class BookingModel
     {
         public Guid BookingId { get; set; }
+        public Guid JourneyId { get; set; }
         public Guid UserId { get; set; }
         public Guid PropertyId { get; set; }
         public Guid RoomId { get; set; }
