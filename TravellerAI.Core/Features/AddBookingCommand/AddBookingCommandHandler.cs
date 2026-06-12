@@ -18,7 +18,7 @@ public class AddBookingCommandHandler : IRequestHandler<AddBookingCommand, Guid>
     public async Task<Guid> Handle(AddBookingCommand command, CancellationToken cancellationToken)
     {
         // check user availability
-        var user = await _userService.GetUserAsync(command.UserId);
+        var user = await _userService.GetUser(command.UserId);
         if (user == null)
         {
             throw new Exception($"User {command.UserId} does not exist");
@@ -49,7 +49,3 @@ public class AddBookingCommandHandler : IRequestHandler<AddBookingCommand, Guid>
     }
 }
 
-public interface IUserService
-{
-    public Task<UserModel> GetUserAsync(Guid userId);
-}
