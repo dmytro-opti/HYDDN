@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace TravellerAI.Core.Features.BuildJourneyCommand;
 
-public class BuildJourneyCommandValidator : AbstractValidator<BuildJourneyCommand>
+public class AddTransportValidator : AbstractValidator<BuildJourneyCommand>
 {
-    public BuildJourneyCommandValidator()
+    public AddTransportValidator()
     {
         RuleFor(input => input.UserId)
             .NotEmpty().WithMessage("UserId cannot be null");

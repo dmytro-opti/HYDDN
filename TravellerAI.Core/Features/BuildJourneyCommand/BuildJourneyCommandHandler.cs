@@ -55,6 +55,17 @@ public class BuildJourneyCommandHandler : IRequestHandler<BuildJourneyCommand, G
             CheckOutDate = command.Period.End
             
         }, cancellationToken);
+        
+        await _mediator.Send(new AddTransportCommand.AddTransportCommand
+        {
+            JourneyId = journey.JourneyId,
+            UserId = command.UserId,
+            Type = command.Transport.Type,
+            Company = command.Transport.Company,
+            SeatCount = command.Transport.SeatCount,
+            SeatClass = command.Transport.SeatClass,
+        }, cancellationToken);
+        
         return journey.JourneyId;
     }
 }
