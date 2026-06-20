@@ -6,4 +6,14 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="AutoMapper" Version="16.1.1" />
+      <PackageReference Include="MediatR" Version="11.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\TravellerAI.Core\TravellerAI.Core.csproj" />
+      <ProjectReference Include="..\TravellerAI.Domain\TravellerAI.Domain.csproj" />
+    </ItemGroup>
+
 </Project>
