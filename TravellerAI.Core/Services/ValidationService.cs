@@ -33,7 +33,10 @@ public class ValidationService : IValidationService
     {
         throw new NotImplementedException();
     }
-
+    public Task<bool> CheckPeriod (PeriodModel period)
+    {
+        throw new NotImplementedException();
+    }
     public Task<bool> CheckInt(int intToCheck)
     {
         throw new NotImplementedException();

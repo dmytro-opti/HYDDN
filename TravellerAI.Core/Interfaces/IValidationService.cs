@@ -13,4 +13,5 @@ public interface IValidationService
     Task<bool> ValidateBirthDate(UserInfoModel user);
     Task<bool> CheckString(string stringToCheck);
     Task<bool> CheckInt(int intToCheck);
+    Task<bool> CheckPeriod(PeriodModel period);
 }
