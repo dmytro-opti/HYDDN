@@ -2,6 +2,7 @@ namespace TravellerAI.Domain.Models;
 
 public class TripModel
 {
+    public Guid TripId { get; set; }
     public string Name  { get; set; }
     public UserModel User { get; set; }
     public GroupModel Group { get; set; }

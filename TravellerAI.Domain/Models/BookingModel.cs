@@ -22,6 +22,7 @@ namespace TravellerAI.Domain.Models;
         public int GuestCount { get; set; }
         public BookingStatus Status { get; set; } 
         public BudgetModel Budget { get; set; }
+        public bool IsFrozen { get; set; }
     }
 
 

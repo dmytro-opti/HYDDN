@@ -4,13 +4,11 @@ using TravellerAI.Domain.Models;
 
 namespace TravellerAI.Core.Features.AddBookingCommand;
 
-public class AddBookingCommand : IRequest<Guid>
+public class AddBookingCommand : IRequest<bool>
 {
     public Guid UserId { get; set; }
-    public Guid JourneyId { get; set; }
-    public Guid PropertyId { get; set; }
-    public Guid RoomId { get; set; }
-    public DateTime CheckInDate { get; set; }
-    public DateTime CheckOutDate { get; set; }
-    public int GuestCount { get; set; }
+    public Guid TripId { get; set; }
+    public PeriodModel Period { get; set; }
+    public int Children { get; set; }
+    public int Adults { get; set; }
 }
