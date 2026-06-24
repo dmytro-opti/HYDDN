@@ -1,19 +1,21 @@
 using MediatR;
 using TravellerAI.Core.Interfaces;
+using TravellerAI.Domain.Enums;
+using TravellerAI.Domain.Models;
 
 namespace TravellerAI.Core.Features.AddBookingCommand;
 
-public class AddBookingCommandHandler : IRequestHandler<AddBookingCommand, Guid>
+public class AddBookingCommandHandler : IRequestHandler<AddBookingCommand, bool>
 {
-    private readonly IJourneyService _journeyService;
+    private readonly ITripService _tripService;
     private readonly IUserService _userService;
     
-    public AddBookingCommandHandler(IJourneyService journeyService, IUserService userService)
+    public AddBookingCommandHandler(ITripService tripService, IUserService userService)
     {
-        _journeyService = journeyService;
+        _tripService = tripService;
         _userService = userService;
     }
-    public async Task<Guid> Handle(AddBookingCommand command, CancellationToken cancellationToken)
+    public async Task<bool> Handle(AddBookingCommand command, CancellationToken cancellationToken)
     {
         // check user availability
         var user = await _userService.GetUserAsync(command.UserId);
@@ -22,27 +24,20 @@ public class AddBookingCommandHandler : IRequestHandler<AddBookingCommand, Guid>
             throw new Exception($"User {command.UserId} does not exist");
         }
         
-        // check journey
-        var journey = await _journeyService.GetJourney(command.JourneyId);
-        if (journey == null)
+        // check trip
+        var trip = await _tripService.GetTripAsync(command.TripId);
+        if (trip == null)
         {
-            throw new Exception($"Journey {command.JourneyId} does not exist");
+            throw new Exception($"Trip {command.TripId} does not exist");
         }
-        
-        // check property
-        //bookingService
-        
-        // check room
-        // bookingService
-        
-        // check guest count + checkin
-        // bookingService
-        
-        // convert command model into bookingmodel
-        // automapper
-        
-        // add booking model to journeymodel
-        
-        return Guid.NewGuid();
+
+        trip.Booking = new BookingModel()
+        {
+            CheckInDate = command.Period.Start,
+            CheckOutDate = command.Period.End,
+            Status = BookingStatus.Pending
+        };
+
+        return await _tripService.UpdateTripAsync(trip);
     }
 }

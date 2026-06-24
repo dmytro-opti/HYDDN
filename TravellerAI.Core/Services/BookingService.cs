@@ -22,6 +22,11 @@ public class BookingService : IBookingService
         throw new NotImplementedException();
     }
 
+    public Task<bool> UpdateBookingAsync(BookingModel booking)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<bool> UpdateBooking()
     {
         throw new NotImplementedException();
@@ -33,6 +38,11 @@ public class BookingService : IBookingService
     }
 
     public Task<string> AddBooking()
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> IsValidAsync()
     {
         throw new NotImplementedException();
     }

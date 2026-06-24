@@ -12,7 +12,7 @@ public class TripService : ITripService
         throw new NotImplementedException();
     }
 
-    Task<TripModel> ITripService.GetTrip(Guid tripId)
+    public Task<TripModel> GetTripAsync(Guid tripId)
     {
         throw new NotImplementedException();
     }
@@ -43,6 +43,11 @@ public class TripService : ITripService
     }
 
     public Task<TripModel> Show(TripModel trip)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> UpdateTripAsync(TripModel trip)
     {
         throw new NotImplementedException();
     }

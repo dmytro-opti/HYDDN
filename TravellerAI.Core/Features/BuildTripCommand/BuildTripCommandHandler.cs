@@ -18,7 +18,7 @@ public class BuildTripCommandHandler : IRequestHandler<BuildTripCommand, TripMod
 
     public async Task<TripModel> Handle(BuildTripCommand command, CancellationToken cancellationToken)
     {
-        var trip = await _tripService.GetTrip(command.TripId);
+        var trip = await _tripService.GetTripAsync(command.TripId);
 
         _budgetService.SetBudget(trip, command.Budget);
         

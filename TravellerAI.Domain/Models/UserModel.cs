@@ -9,6 +9,5 @@ public class UserModel
     public string Password { get; set; }
     public string Email { get; set; }
     public bool IsEmailConfirmed { get; set; }
-
-    
+    public IEnumerable<JourneyModel> Journeys { get; set; }
 }
