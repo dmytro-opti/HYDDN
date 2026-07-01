@@ -26,7 +26,7 @@ public class BuildTripCommandHandler : IRequestHandler<BuildTripCommand, TripMod
         
         foreach (var journeyObj in command.Journeys)
         {
-            var journey = await _journeyService.GetJourney(journeyObj.Id);
+            var journey = await _journeyService.GetJourneyAsync(journeyObj.Id);
             
             await _journeyService.SelectPeriod(journey, journeyObj.Period);
             

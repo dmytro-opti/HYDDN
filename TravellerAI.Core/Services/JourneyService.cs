@@ -12,7 +12,7 @@ public class JourneyService : IJourneyService
         return Task.FromResult(Guid.NewGuid());
     }
 
-    Task<JourneyModel> IJourneyService.GetJourney(Guid tripId)
+    Task<JourneyModel> IJourneyService.GetJourneyAsync(Guid tripId)
     {
         throw new NotImplementedException();
     }
