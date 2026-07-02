@@ -1,11 +1,11 @@
 using MediatR;
 using TravellerAI.Domain.Enums;
 using TravellerAI.Domain.Models;
-using TravellerAI.Domain.ViewModels;
+
 
 namespace TravellerAI.Core.Features.AddTransportCommand;
 
-public class AddTransportCommand : IRequest<TransportViewModel>
+public class AddTransportCommand : IRequest<TransportModel>
 {
     public Guid TripId { get; set; }
     public Guid? JourneyId { get; set; }

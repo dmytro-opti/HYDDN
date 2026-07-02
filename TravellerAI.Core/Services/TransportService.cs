@@ -22,7 +22,7 @@ public class TransportService : ITransportService
         throw new NotImplementedException();
     }
 
-    public Task<TransportViewModel> AddTransportAsync(Guid TripId, Guid? JourneyId, TransportType Type, string Company, SeatClass SeatClass,
+    public Task<TransportModel> AddTransportAsync(Guid TripId, Guid? JourneyId, TransportType Type, string Company, SeatClass SeatClass,
         int SeatCount)
     {
         throw new NotImplementedException();

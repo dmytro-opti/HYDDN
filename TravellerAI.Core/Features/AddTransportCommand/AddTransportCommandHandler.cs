@@ -6,7 +6,7 @@ using TravellerAI.Domain.ViewModels;
 
 namespace TravellerAI.Core.Features.AddTransportCommand;
 
-public class AddTransportCommandHandler : IRequestHandler<AddTransportCommand, TransportViewModel>
+public class AddTransportCommandHandler : IRequestHandler<AddTransportCommand, TransportModel>
 {
     private readonly ITransportService _transportService;
     private readonly ITripService _tripService;
@@ -18,7 +18,7 @@ public class AddTransportCommandHandler : IRequestHandler<AddTransportCommand, T
         _tripService = tripService;
         _journeyService = journeyService;
     }
-    public async Task<TransportViewModel> Handle(AddTransportCommand command, CancellationToken cancellationToken)
+    public async Task<TransportModel> Handle(AddTransportCommand command, CancellationToken cancellationToken)
     {
         var trip = await _tripService.GetTripAsync(command.TripId);
         if (trip == null)
