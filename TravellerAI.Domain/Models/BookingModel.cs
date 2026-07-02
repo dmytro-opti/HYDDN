@@ -12,17 +12,19 @@ namespace TravellerAI.Domain.Models;
         public Guid UserId { get; set; }
         public Guid PropertyId { get; set; }
         public Guid RoomId { get; set; }
-        public DateTime CheckInDate { get; set; }
-        public DateTime CheckOutDate { get; set; }
+        public PeriodModel Period { get; set; }
         public DateTime CreatedAt { get; set; }
         public decimal TotalPrice { get; set; }
         public string Currency { get; set; } 
         public bool IsPaid { get; set; }
         public string PaymentMethod { get; set; }
-        public int GuestCount { get; set; }
+        public int Adults { get; set; }
+        public int Children { get; set; } 
         public BookingStatus Status { get; set; } 
         public BudgetModel Budget { get; set; }
         public bool IsFrozen { get; set; }
+        public DateTime CheckInDate { get; set; }
+        public DateTime CheckOutDate { get; set; }
     }
 
 
