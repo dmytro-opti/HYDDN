@@ -27,4 +27,9 @@ public class TransportService : ITransportService
     {
         throw new NotImplementedException();
     }
+
+    public Task<TransportModel> SelectTransportAsync(Guid TransportId)
+    {
+        throw new NotImplementedException();
+    }
 }
