@@ -10,6 +10,11 @@ public class MapService : IMapService
         throw new NotImplementedException();
     }
 
+    public Task<MapModel> CreateMapAsync(LocationModel origin, LocationModel destination)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<string> BuildOptimalWayAsync(MapModel model)
     {
         throw new NotImplementedException();

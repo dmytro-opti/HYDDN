@@ -7,10 +7,10 @@ public class CreateMapCommandValidator : AbstractValidator<CreateMapCommand>
     public CreateMapCommandValidator()
     {
         RuleFor(x => x.Origin)
-            .NotNull()
-            .WithMessage("Origin cannot be null");
+            .NotEmpty()
+            .WithMessage("Origin is required");
         RuleFor(x => x.Destination)
-            .NotNull()
-            .WithMessage("Destination cannot be null");
+            .NotEmpty()
+            .WithMessage("Destination is required");
     }
 }
