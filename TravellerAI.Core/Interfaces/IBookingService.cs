@@ -5,6 +5,7 @@ namespace TravellerAI.Core.Interfaces;
 
 public interface IBookingService
 {
+    Task<BookingModel> GetBookingModelAsync(Guid id);
     Task<bool> CheckAvailableDates(JourneyModel journey, BookingViewModel booking);
     Task SelectPlace(JourneyModel journey, BookingViewModel booking);
     Task<string> AddDates();

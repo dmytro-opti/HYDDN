@@ -7,6 +7,11 @@ namespace TravellerAI.Core.Services;
 
 public class BookingService : IBookingService
 {
+    public Task<BookingModel> GetBookingModelAsync(Guid id)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<bool> CheckAvailableDates(JourneyModel journey, BookingViewModel booking)
     {
         throw new NotImplementedException();
