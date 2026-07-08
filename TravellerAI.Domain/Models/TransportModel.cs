@@ -14,4 +14,5 @@ public class TransportModel
     public SeatClass SeatClass { get; set; }
     public int SeatCount { get; set; }
     public TimeSpan Duration { get; set; }
+    public bool IsAvailable { get; set; }
 }

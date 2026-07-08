@@ -8,6 +8,6 @@ public interface ITransportService
 {
     Task<string> SearchTransport(TransportModel transport);
     Task<List<TransportModel>> SelectTransports(List<TransportModel> transports);
-    Task<List<TransportModel>> SelectAvailableTransports(List<TransportModel> transports);
+    Task<List<TransportModel>> SelectAvailableTransports();
     Task<TransportModel> AddTransportAsync(Guid TripId, Guid? JourneyId, TransportType Type, string Company, SeatClass SeatClass, int SeatCount);
 }
