@@ -15,7 +15,7 @@ public class TransportService : ITransportService
         throw new NotImplementedException();
     }
 
-    public Task<List<TransportModel>> SelectAvailableTransports(List<TransportModel> transports)
+    public Task<List<TransportModel>> SelectAvailableTransports()
     {
         throw new NotImplementedException();
     }

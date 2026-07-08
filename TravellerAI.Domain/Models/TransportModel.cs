@@ -10,4 +10,5 @@ public class TransportModel
     public PeriodModel Period { get; set; }
     public SeatClass SeatClass { get; set; }
     public TimeSpan Duration { get; set; }
+    public bool IsAvailable { get; set; }
 }
