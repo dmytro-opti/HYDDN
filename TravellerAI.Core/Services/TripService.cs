@@ -51,4 +51,14 @@ public class TripService : ITripService
     {
         throw new NotImplementedException();
     }
+
+    public Task<IEnumerable<TripModel>> GetTripsAsync(Guid? userId, PeriodModel? period, double? priceFrom, double? priceTo, Guid? LocationId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<TripModel>> GetTripsAsync()
+    {
+        throw new NotImplementedException();
+    }
 }

@@ -14,4 +14,5 @@ public interface ITripService
     Task Build(TripModel trip);
     Task<TripModel> Show(TripModel trip);
     Task<bool> UpdateTripAsync(TripModel trip);
+    Task<IEnumerable<TripModel>> GetTripsAsync(Guid? userId, PeriodModel? period, double? priceFrom, double? priceTo, Guid? LocationId);
 }
