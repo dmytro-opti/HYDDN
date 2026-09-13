@@ -51,4 +51,9 @@ public class TripService : ITripService
     {
         throw new NotImplementedException();
     }
+
+    public Task<TripStatusModel> GetTripStatus(Guid tripId)
+    {
+        throw new NotImplementedException();
+    }
 }
