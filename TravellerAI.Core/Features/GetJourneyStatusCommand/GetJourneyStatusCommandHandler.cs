@@ -6,7 +6,7 @@ namespace TravellerAI.Core.Features.GetJourneyStatusCommand;
 
 public class GetJourneyStatusCommandHandler : IRequestHandler<GetJourneyStatusCommand, JourneyStatus>
 {
-    public readonly IJourneyService _journeyService;
+    private readonly IJourneyService _journeyService;
     
     public GetJourneyStatusCommandHandler(IJourneyService journeyService)
     {
