@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using TravellerAI.Core.Features.BuildJourneyCommand;
+using TravellerAI.Core.Features.CreateJourneyCommand;
 using TravellerAI.Core.Interfaces;
 using TravellerAI.Domain.Exceptions;
 
@@ -27,7 +27,7 @@ public class UserController : ControllerBase
     {
         try
         {
-            var result = await _mediator.Send(new BuildJourneyCommand());
+            var result = await _mediator.Send(new CreateJourneyCommand());
             
             return new JsonResult(result);
         }
