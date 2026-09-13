@@ -1,4 +1,5 @@
 using TravellerAI.Core.Features.BuildTripCommand;
+using TravellerAI.Domain.Enums;
 using TravellerAI.Domain.Models;
 using TravellerAI.Domain.ViewModels;
 
@@ -14,5 +15,5 @@ public interface ITripService
     Task Build(TripModel trip);
     Task<TripModel> Show(TripModel trip);
     Task<bool> UpdateTripAsync(TripModel trip);
-    Task<TripStatusModel> GetTripStatus(Guid tripId);
+    Task<TripStatus> GetTripStatus(Guid tripId);
 }

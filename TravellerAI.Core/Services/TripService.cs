@@ -1,5 +1,6 @@
 using TravellerAI.Core.Features.BuildTripCommand;
 using TravellerAI.Core.Interfaces;
+using TravellerAI.Domain.Enums;
 using TravellerAI.Domain.Models;
 using TravellerAI.Domain.ViewModels;
 
@@ -52,7 +53,7 @@ public class TripService : ITripService
         throw new NotImplementedException();
     }
 
-    public Task<TripStatusModel> GetTripStatus(Guid tripId)
+    public Task<TripStatus> GetTripStatus(Guid tripId)
     {
         throw new NotImplementedException();
     }

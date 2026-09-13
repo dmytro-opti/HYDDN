@@ -1,11 +1,12 @@
 using MediatR;
 using MediatR.Pipeline;
 using TravellerAI.Core.Interfaces;
-using TravellerAI.Domain.Models;
+using TravellerAI.Domain.Enums;
+
 
 namespace TravellerAI.Core.Features.GetTripStatusCommand;
 
-public class GetTripStatusCommandHandler : IRequestHandler<GetTripStatusCommand, TripStatusModel>
+public class GetTripStatusCommandHandler : IRequestHandler<GetTripStatusCommand, TripStatus>
 {
     public readonly ITripService _tripService;
     
@@ -14,7 +15,7 @@ public class GetTripStatusCommandHandler : IRequestHandler<GetTripStatusCommand,
         _tripService = tripService;
     }
     
-    public async Task<TripStatusModel> Handle(GetTripStatusCommand command, CancellationToken cancellationToken)
+    public async Task<TripStatus> Handle(GetTripStatusCommand command, CancellationToken cancellationToken)
     {
         var trip = await _tripService.GetTripAsync(command.TripId);
         if (trip == null)
