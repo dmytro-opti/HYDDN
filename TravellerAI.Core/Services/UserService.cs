@@ -63,4 +63,9 @@ public class UserService : IUserService
     {
         throw new NotImplementedException();
     }
+
+    public Task<UserInfoModel> GetUserInfoAsync(Guid userId)
+    {
+        throw new NotImplementedException();
+    }
 }

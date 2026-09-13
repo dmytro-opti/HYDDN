@@ -20,8 +20,3 @@ public class BuildJourneyCommandHandler : IRequestHandler<BuildJourneyCommand, G
         return Guid.NewGuid();
     }
 }
-
-public interface IUserService
-{
-    public Task<UserModel> GetUserAsync(Guid userId);
-}
