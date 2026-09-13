@@ -8,7 +8,7 @@ namespace TravellerAI.Core.Features.GetTripStatusCommand;
 
 public class GetTripStatusCommandHandler : IRequestHandler<GetTripStatusCommand, TripStatus>
 {
-    public readonly ITripService _tripService;
+    private readonly ITripService _tripService;
     
     public GetTripStatusCommandHandler(ITripService tripService)
     {
