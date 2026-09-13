@@ -2,7 +2,7 @@ using MediatR;
 using TravellerAI.Core.Interfaces;
 
 namespace TravellerAI.Core.Features.SelectBookingCommand;
-
+//unnecessary
 public class SelectBookingCommandHandler : IRequestHandler<SelectBookingCommand, bool>
 {
     private readonly ITripService _tripService;
