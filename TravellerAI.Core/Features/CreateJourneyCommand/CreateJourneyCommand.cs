@@ -1,9 +1,9 @@
 using MediatR;
 using TravellerAI.Domain.Models;
 
-namespace TravellerAI.Core.Features.BuildJourneyCommand;
+namespace TravellerAI.Core.Features.CreateJourneyCommand;
 
-public class BuildJourneyCommand : IRequest<Guid>
+public class CreateJourneyCommand : IRequest<Guid>
 {
     public Guid UserId { get; set; }
     public PeriodModel Period { get; set; }

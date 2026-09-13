@@ -3,19 +3,19 @@ using TravellerAI.Core.Interfaces;
 using TravellerAI.Domain.Exceptions;
 using TravellerAI.Domain.Models;
 
-namespace TravellerAI.Core.Features.BuildJourneyCommand;
-
-public class BuildJourneyCommandHandler : IRequestHandler<BuildJourneyCommand, Guid>
+namespace TravellerAI.Core.Features.CreateJourneyCommand;
+//First stage
+public class CreateJourneyCommandHandler : IRequestHandler<CreateJourneyCommand, Guid>
 {
     private readonly IJourneyService _journeyService;
     private readonly IUserService _userService;
     
-    public BuildJourneyCommandHandler(IJourneyService journeyService, IUserService userService)
+    public CreateJourneyCommandHandler(IJourneyService journeyService, IUserService userService)
     {
         _journeyService = journeyService;
         _userService = userService;
     }
-    public async Task<Guid> Handle(BuildJourneyCommand command, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateJourneyCommand command, CancellationToken cancellationToken)
     {
         return Guid.NewGuid();
     }

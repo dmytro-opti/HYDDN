@@ -3,7 +3,7 @@ using TravellerAI.Core.Interfaces;
 using TravellerAI.Domain.Models;
 
 namespace TravellerAI.Core.Features.BuildTripCommand;
-
+//Third stage
 public class BuildTripCommandHandler : IRequestHandler<BuildTripCommand, TripModel>
 {
     private readonly ITripService _tripService;

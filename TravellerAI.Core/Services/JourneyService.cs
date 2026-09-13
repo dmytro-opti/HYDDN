@@ -1,4 +1,4 @@
-using TravellerAI.Core.Features.BuildJourneyCommand;
+using TravellerAI.Core.Features.CreateJourneyCommand;
 using TravellerAI.Core.Interfaces;
 using TravellerAI.Domain.Models;
 using TravellerAI.Domain.ViewModels;
@@ -7,7 +7,7 @@ namespace TravellerAI.Core.Services;
 
 public class JourneyService : IJourneyService
 {
-    public Task<Guid> CreateJourney(BuildJourneyCommand command)
+    public Task<Guid> CreateJourney(CreateJourneyCommand command)
     {
         return Task.FromResult(Guid.NewGuid());
     }

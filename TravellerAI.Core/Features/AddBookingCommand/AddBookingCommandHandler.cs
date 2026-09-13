@@ -4,7 +4,7 @@ using TravellerAI.Domain.Enums;
 using TravellerAI.Domain.Models;
 
 namespace TravellerAI.Core.Features.AddBookingCommand;
-
+//Second stage 
 public class AddBookingCommandHandler : IRequestHandler<AddBookingCommand, bool>
 {
     private readonly ITripService _tripService;
