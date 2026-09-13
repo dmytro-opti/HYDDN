@@ -53,7 +53,7 @@ public class TripService : ITripService
         throw new NotImplementedException();
     }
 
-    public Task<TripStatus> GetTripStatus(Guid tripId)
+    public Task<TripStatus> GetTripStatusAsync(Guid tripId)
     {
         throw new NotImplementedException();
     }

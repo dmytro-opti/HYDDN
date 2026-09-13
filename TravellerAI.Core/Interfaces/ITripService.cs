@@ -15,5 +15,5 @@ public interface ITripService
     Task Build(TripModel trip);
     Task<TripModel> Show(TripModel trip);
     Task<bool> UpdateTripAsync(TripModel trip);
-    Task<TripStatus> GetTripStatus(Guid tripId);
+    Task<TripStatus> GetTripStatusAsync(Guid tripId);
 }

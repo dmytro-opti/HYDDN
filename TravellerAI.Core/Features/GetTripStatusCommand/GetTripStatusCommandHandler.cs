@@ -23,6 +23,6 @@ public class GetTripStatusCommandHandler : IRequestHandler<GetTripStatusCommand,
             throw new Exception($"Trip with id {command.TripId} not found");
         }
 
-        return await _tripService.GetTripStatus(trip.TripId);
+        return await _tripService.GetTripStatusAsync(trip.TripId);
     }
 }
