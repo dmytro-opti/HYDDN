@@ -14,10 +14,7 @@ public class GetAvailableLocationCommandHandler : IRequestHandler<GetAvailableLo
     public async Task<IEnumerable<LocationModel>> Handle(GetAvailableLocationListCommand command, CancellationToken cancellationToken)
     {
         var locations = await _locationService.GetLocationByCountryAndCity(command.Country, command.City);
-        if (locations == null)
-        {
-            return Enumerable.Empty<LocationModel>();
-        }
+        
         return locations;
     }
 }
