@@ -17,12 +17,11 @@ public class GetTripStatusCommandHandler : IRequestHandler<GetTripStatusCommand,
     
     public async Task<TripStatus> Handle(GetTripStatusCommand command, CancellationToken cancellationToken)
     {
-        var trip = await _tripService.GetTripAsync(command.TripId);
-        if (trip == null)
+        var tripStatus = await _tripService.GetTripStatusAsync(command.TripId);
+        if (tripStatus == null)
         {
             throw new Exception($"Trip with id {command.TripId} not found");
         }
-
-        return await _tripService.GetTripStatusAsync(trip.TripId);
+        return tripStatus;
     }
 }
