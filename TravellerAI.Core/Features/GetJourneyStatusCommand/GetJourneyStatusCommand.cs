@@ -6,5 +6,5 @@ namespace TravellerAI.Core.Features.GetJourneyStatusCommand;
 
 public class GetJourneyStatusCommand : IRequest<JourneyStatus>
 {
-    public Guid journeyId{get;set;}
+    public Guid JourneyId{get;set;}
 }

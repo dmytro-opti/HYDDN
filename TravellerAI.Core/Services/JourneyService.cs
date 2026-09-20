@@ -15,7 +15,7 @@ public class JourneyService : IJourneyService
 
     Task<JourneyModel> IJourneyService.GetJourneyAsync(Guid tripId)
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public Task<Guid> GetJourney(Guid tripId)

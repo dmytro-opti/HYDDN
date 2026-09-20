@@ -15,12 +15,11 @@ public class GetJourneyStatusCommandHandler : IRequestHandler<GetJourneyStatusCo
 
     public async Task<JourneyStatus> Handle(GetJourneyStatusCommand command, CancellationToken cancellationToken)
     {
-        var journey = _journeyService.GetJourneyAsync(command.journeyId);
-        if (journey == null)
+        var status = await _journeyService.GetJourneyStatusAsync(command.JourneyId);
+        if (status == null)
         {
-            throw new Exception($"Journey {command.journeyId} not found");
+            throw new Exception($"Journey with id {command.JourneyId} not found");
         }
-
-        return await _journeyService.GetJourneyStatusAsync(command.journeyId);
+        return status;
     }
 }
