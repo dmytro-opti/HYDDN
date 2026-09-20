@@ -7,6 +7,6 @@ public class BuildJourneyCommandValidator : AbstractValidator<BuildJourneyComman
     public BuildJourneyCommandValidator()
     {
         RuleFor(input => input.UserId)
-            .NotNull().WithMessage("UserId cannot be null");
+            .NotEmpty().WithMessage("UserId cannot be null");
     }
 }

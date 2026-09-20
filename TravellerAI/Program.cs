@@ -6,7 +6,15 @@ using TravellerAI.Settings;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders();
 
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.SingleLine = true;
+    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss 'UTC' ";
+    options.UseUtcTimestamp = true;
+    options.IncludeScopes = true;
+});
 // Add services to the container.
 builder.Services.RegisterApplicationServices();
 builder.Services.AddControllersWithViews();
