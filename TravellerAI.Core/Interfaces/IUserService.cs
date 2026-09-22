@@ -10,4 +10,5 @@ public interface IUserService
     public Task UpdateEmailAsync(Guid userId, string email);
     public Task RemoveUserAsync(Guid userId);
     public Task<UserInfoModel> GetUserInfoAsync(Guid userId);
+    public Task<bool> UpdateUserProfileAsync(UserModel user);
 }
