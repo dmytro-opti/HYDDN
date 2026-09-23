@@ -21,6 +21,4 @@ public class BookingViewModel
     /// <summary>Selected booking which cannot be changed anymore.</summary>
     public bool IsFrozen { get; set; }
     public DateTime CreatedAt { get; set; }
-    /// <summary>Budget planned for the booking (used when a trip is built).</summary>
-    public int TotalBudget { get; set; }
 }

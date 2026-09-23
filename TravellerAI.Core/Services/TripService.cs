@@ -1,13 +1,12 @@
 using AutoMapper;
 using TravellerAI.Core.Exceptions;
-using TravellerAI.Core.Features.BuildTripCommand;
+using TravellerAI.Core.Geo;
 using TravellerAI.Core.Interfaces;
 using TravellerAI.Core.Repositories;
 using TravellerAI.Domain.Entities;
-using TravellerAI.Domain.Entities.Owned;
 using TravellerAI.Domain.Enums;
 using TravellerAI.Domain.Models;
-using TravellerAI.Domain.ViewModels;
+using static TravellerAI.Core.Constants;
 
 namespace TravellerAI.Core.Services;
 
@@ -15,165 +14,262 @@ public class TripService : ITripService
 {
     private readonly ITripRepository _tripRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IRepository<LocationEntity> _locationRepository;
+    private readonly IRepository<ActivityEntity> _activityRepository;
+    private readonly IMapService _mapService;
     private readonly ILoggerService<TripService> _logger;
     private readonly IMapper _mapper;
 
-    public TripService(ITripRepository tripRepository, IUserRepository userRepository,
-        ILoggerService<TripService> logger, IMapper mapper)
+    public TripService(ITripRepository tripRepository, IUserRepository userRepository, IRepository<LocationEntity> locationRepository,
+        IRepository<ActivityEntity> activityRepository, IMapService mapService, ILoggerService<TripService> logger, IMapper mapper)
     {
         _tripRepository = tripRepository;
         _userRepository = userRepository;
+        _locationRepository = locationRepository;
+        _activityRepository = activityRepository;
+        _mapService = mapService;
         _logger = logger;
         _mapper = mapper;
     }
 
-    public async Task<Guid> CreateTrip(BuildTripCommand command)
+    public async Task<TripModel> CreateTripAsync(Guid userId, TripDraftModel draft)
     {
-        var userId = command.User?.Id ?? throw new BadRequestException("Trip user is not specified");
-
         if (!await _userRepository.ExistsAsync(userId))
         {
             throw new NotFoundException("User", userId);
         }
 
-        var trip = new TripEntity
-        {
-            Name = command.Name,
-            UserId = userId,
-            Status = TripStatus.Active,
-            Period = command.Period == null ? null : ToPeriod(command.Period),
-            Budget = command.Budget > 0 ? new BudgetEntity { Budget = command.Budget } : null
-        };
+        var stops = await BuildStopsAsync(draft);
+        var trip = new TripEntity { UserId = userId };
+        Apply(trip, draft, stops);
 
         await _tripRepository.AddAsync(trip);
-        _logger.Log(ErrorLevel.Low, $"Trip {trip.Id} was created for user {userId}");
-
-        return trip.Id;
-    }
-
-    public async Task<TripModel> GetTripAsync(Guid tripId)
-    {
-        var trip = await GetTripEntityAsync(tripId);
+        _logger.Log(ErrorLevel.Low, $"Trip {trip.Id} was created by user {userId}");
 
         return _mapper.Map<TripModel>(trip);
     }
 
-    public async Task<Guid> DeleteTrip(Guid tripId)
+    public async Task<TripModel> UpdateTripAsync(Guid userId, Guid tripId, TripDraftModel draft)
     {
-        if (!await _tripRepository.DeleteAsync(tripId))
+        var trip = await GetOwnTripAsync(tripId, userId);
+
+        if (await _tripRepository.IsUsedByOthersOrApprovedAsync(tripId, userId))
         {
-            throw new NotFoundException("Trip", tripId);
+            throw new ConflictException($"Trip {tripId} is used by other travellers or approved journeys, create a new trip instead");
         }
 
-        _logger.Log(ErrorLevel.Low, $"Trip {tripId} was deleted");
+        var stops = await BuildStopsAsync(draft);
 
-        return tripId;
-    }
-
-    public async Task<Guid> AddPeriodTrip(BuildTripCommand command)
-    {
-        var trip = await GetActiveTripEntityAsync(command.TripId);
-
-        trip.Period = ToPeriod(command.Period);
+        trip.Stops.Clear();
+        Apply(trip, draft, stops);
         await _tripRepository.UpdateAsync(trip);
 
-        return trip.Id;
+        return _mapper.Map<TripModel>(trip);
     }
 
-    public async Task SelectPeriod(TripModel trip, PeriodViewModel period)
+    public async Task DeleteTripAsync(Guid userId, Guid tripId)
     {
-        var entity = await GetActiveTripEntityAsync(trip.TripId);
+        await GetOwnTripAsync(tripId, userId);
 
-        entity.Period = ToPeriod(period);
-        await _tripRepository.UpdateAsync(entity);
-
-        trip.Period = _mapper.Map<PeriodModel>(entity.Period);
-    }
-
-    /// <summary>
-    /// Recalculates budget totals of the trip (and of its journey) from transports and bookings.
-    /// </summary>
-    public async Task Build(TripModel trip)
-    {
-        var entity = await GetActiveTripEntityAsync(trip.TripId);
-
-        entity.Budget ??= new BudgetEntity();
-        entity.Budget.Total = CalculateTripCost(entity);
-
-        if (entity.Journey?.Budget != null)
+        if (await _tripRepository.IsUsedAsync(tripId))
         {
-            entity.Journey.Budget.Total = entity.Journey.Trips.Sum(CalculateTripCost);
+            throw new ConflictException($"Trip {tripId} is scheduled in journeys and cannot be deleted");
         }
 
-        await _tripRepository.UpdateAsync(entity);
-
-        if (entity.Budget.Budget > 0 && entity.Budget.Total > entity.Budget.Budget)
-        {
-            _logger.Log(ErrorLevel.Medium, $"Trip {entity.Id} exceeds its budget: {entity.Budget.Total} > {entity.Budget.Budget}");
-        }
+        await _tripRepository.DeleteAsync(tripId);
+        _logger.Log(ErrorLevel.Low, $"Trip {tripId} was deleted");
     }
 
-    public Task<TripModel> Show(TripModel trip)
-    {
-        return GetTripAsync(trip.TripId);
-    }
-
-    public async Task<bool> UpdateTripAsync(TripModel trip)
-    {
-        var entity = await GetActiveTripEntityAsync(trip.TripId);
-
-        _mapper.Map(trip, entity);
-
-        if (trip.Booking != null)
-        {
-            UpsertBooking(entity, trip.Booking);
-        }
-
-        await _tripRepository.UpdateAsync(entity);
-        _logger.Log(ErrorLevel.Low, $"Trip {entity.Id} was updated");
-
-        return true;
-    }
-
-    public async Task<TripStatus> GetTripStatusAsync(Guid tripId)
+    public async Task<TripModel> GetTripAsync(Guid userId, Guid tripId)
     {
         var trip = await GetTripEntityAsync(tripId);
 
-        return trip.Status;
+        if (!trip.IsPublic && trip.UserId != userId)
+        {
+            throw new ForbiddenException($"Trip {tripId} is private");
+        }
+
+        return _mapper.Map<TripModel>(trip);
     }
 
-    private void UpsertBooking(TripEntity trip, BookingModel booking)
+    public async Task<IReadOnlyList<TripModel>> SearchTripsAsync(Guid userId, Guid countryId, string? city, Guid? startLocationId,
+        Guid? endLocationId)
     {
-        var current = trip.Booking;
+        city = string.IsNullOrWhiteSpace(city) ? null : city.Trim();
+        var trips = await _tripRepository.SearchCatalogAsync(countryId, city, userId);
 
-        if (current is { IsFrozen: true })
-        {
-            throw new ConflictException($"Booking {current.Id} of trip {trip.Id} is frozen and cannot be changed");
-        }
-
-        if (current != null && current.Id == booking.BookingId)
-        {
-            _mapper.Map(booking, current);
-            return;
-        }
-
-        // a new booking replaces the previous one, which is cancelled
-        if (current != null)
-        {
-            current.Status = BookingStatus.Cancelled;
-        }
-
-        var newBooking = _mapper.Map<BookingEntity>(booking);
-        newBooking.UserId = trip.UserId;
-        newBooking.JourneyId ??= trip.JourneyId;
-        trip.Booking = newBooking;
+        return trips
+            .Where(t => t.Stops.Count > 0)
+            .Where(t => startLocationId == null || t.Stops.MinBy(s => s.Order)!.LocationId == startLocationId)
+            .Where(t => endLocationId == null || t.Stops.MaxBy(s => s.Order)!.LocationId == endLocationId)
+            .OrderByDescending(t => t.Rating)
+            .ThenBy(t => t.DistanceKm)
+            .Select(t => _mapper.Map<TripModel>(t))
+            .ToList();
     }
 
-    private static decimal CalculateTripCost(TripEntity trip)
+    private static void Apply(TripEntity trip, TripDraftModel draft, IReadOnlyList<ResolvedStop> stops)
     {
-        var bookingCost = trip.Booking is { Status: not BookingStatus.Cancelled } booking ? booking.TotalPrice : 0;
+        trip.Name = draft.Name.Trim();
+        trip.Description = string.IsNullOrWhiteSpace(draft.Description) ? null : draft.Description.Trim();
+        trip.IsPublic = draft.IsPublic;
+        trip.CountryId = stops[0].Location.CountryId;
+        trip.City = stops[0].Location.City!.Trim();
+        trip.DistanceKm = Math.Round(stops.Sum(s => s.DistanceFromPreviousKm), 2);
 
-        return trip.Transports.Sum(t => t.Price) + bookingCost;
+        for (var i = 0; i < stops.Count; i++)
+        {
+            trip.Stops.Add(new TripStopEntity
+            {
+                Order = i,
+                LocationId = stops[i].Location.Id,
+                ActivityId = stops[i].Activity?.Id,
+                DistanceFromPreviousKm = stops[i].DistanceFromPreviousKm
+            });
+        }
+    }
+
+    /// <summary>
+    /// Resolves stops to locations, validates them and (optionally) optimizes their order.
+    /// </summary>
+    private async Task<IReadOnlyList<ResolvedStop>> BuildStopsAsync(TripDraftModel draft)
+    {
+        if (draft.Stops.Count is < Journey.MinTripStops or > Journey.MaxTripStops)
+        {
+            throw new BadRequestException($"Trip must have {Journey.MinTripStops}-{Journey.MaxTripStops} stops");
+        }
+
+        var stops = new List<ResolvedStop>();
+        foreach (var stop in draft.Stops)
+        {
+            stops.Add(await ResolveStopAsync(stop));
+        }
+
+        EnsureSameCountryAndCity(stops);
+        EnsureUniqueLocations(stops);
+
+        if (draft.Optimize && stops.Count > 3)
+        {
+            stops = await OptimizeAsync(stops);
+        }
+
+        CalculateAndValidateDistances(stops);
+
+        return stops;
+    }
+
+    private async Task<ResolvedStop> ResolveStopAsync(TripStopDraftModel stop)
+    {
+        LocationEntity? location;
+        ActivityEntity? activity = null;
+
+        if (stop.ActivityId.HasValue)
+        {
+            activity = await _activityRepository.GetByIdAsync(stop.ActivityId.Value)
+                       ?? throw new NotFoundException("Activity", stop.ActivityId.Value);
+            // activity address is the stop location
+            location = activity.Location ?? throw new BadRequestException($"Activity '{activity.Name}' has no address");
+        }
+        else if (stop.LocationId.HasValue)
+        {
+            location = await _locationRepository.GetByIdAsync(stop.LocationId.Value)
+                       ?? throw new NotFoundException("Location", stop.LocationId.Value);
+        }
+        else
+        {
+            throw new BadRequestException("Every stop needs a location or an activity");
+        }
+
+        if (location.Latitude == null || location.Longitude == null)
+        {
+            throw new BadRequestException($"Location '{location.Name ?? location.Street}' has no coordinates");
+        }
+
+        return new ResolvedStop(location, activity);
+    }
+
+    private static void EnsureSameCountryAndCity(IReadOnlyList<ResolvedStop> stops)
+    {
+        var first = stops[0].Location;
+
+        if (string.IsNullOrWhiteSpace(first.City))
+        {
+            throw new BadRequestException($"Location '{first.Name ?? first.Street}' has no city");
+        }
+
+        foreach (var stop in stops.Skip(1))
+        {
+            if (stop.Location.CountryId != first.CountryId)
+            {
+                throw new BadRequestException($"All stops must be in one country: '{stop.Name}' is in another country");
+            }
+
+            if (!string.Equals(stop.Location.City?.Trim(), first.City.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BadRequestException($"All stops must be in {first.City}: '{stop.Name}' is in {stop.Location.City}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// A location is visited once; only the first and the last stop (hotel) can be the same.
+    /// </summary>
+    private static void EnsureUniqueLocations(IReadOnlyList<ResolvedStop> stops)
+    {
+        for (var i = 1; i < stops.Count; i++)
+        {
+            if (stops[i].Location.Id == stops[i - 1].Location.Id)
+            {
+                throw new BadRequestException($"Stops {i} and {i + 1} are the same location '{stops[i].Name}'");
+            }
+        }
+
+        var middle = stops.Skip(1).Take(stops.Count - 2).Select(s => s.Location.Id).ToList();
+        var endpoints = new[] { stops[0].Location.Id, stops[^1].Location.Id };
+
+        if (middle.Count != middle.Distinct().Count() || middle.Any(endpoints.Contains))
+        {
+            throw new BadRequestException("Each location can be visited once (only the start and the finish can be the same)");
+        }
+    }
+
+    /// <summary>
+    /// Reorders the stops between the fixed first and last stop by the shortest route.
+    /// </summary>
+    private async Task<List<ResolvedStop>> OptimizeAsync(List<ResolvedStop> stops)
+    {
+        var map = await _mapService.CreateMapAsync(stops.Select(s => s.Location.Id));
+        var optimized = await _mapService.BuildOptimalWayAsync(map, keepLastPoint: true);
+
+        var middle = stops.Skip(1).Take(stops.Count - 2).ToDictionary(s => s.Location.Id);
+        var ordered = optimized.Points.Skip(1).Take(optimized.Points.Count - 2).Select(p => middle[p.LocationId]);
+
+        return new[] { stops[0] }.Concat(ordered).Append(stops[^1]).ToList();
+    }
+
+    private static void CalculateAndValidateDistances(IReadOnlyList<ResolvedStop> stops)
+    {
+        for (var i = 1; i < stops.Count; i++)
+        {
+            var previous = stops[i - 1].Location;
+            var current = stops[i].Location;
+            var distance = Math.Round(GeoCalculator.DistanceKm(previous.Latitude!.Value, previous.Longitude!.Value,
+                current.Latitude!.Value, current.Longitude!.Value), 2);
+
+            if (distance > Journey.MaxStopDistanceKm)
+            {
+                throw new BadRequestException(
+                    $"'{stops[i - 1].Name}' and '{stops[i].Name}' are {distance} km apart, max {Journey.MaxStopDistanceKm} km between stops");
+            }
+
+            stops[i].DistanceFromPreviousKm = distance;
+        }
+
+        var total = stops.Sum(s => s.DistanceFromPreviousKm);
+        if (total > Journey.MaxTripDistanceKm)
+        {
+            throw new BadRequestException($"Trip is {Math.Round(total, 2)} km long, max {Journey.MaxTripDistanceKm} km per day");
+        }
     }
 
     private async Task<TripEntity> GetTripEntityAsync(Guid tripId)
@@ -189,28 +285,29 @@ public class TripService : ITripService
         return trip;
     }
 
-    /// <summary>
-    /// Only active trips can be changed.
-    /// </summary>
-    private async Task<TripEntity> GetActiveTripEntityAsync(Guid tripId)
+    private async Task<TripEntity> GetOwnTripAsync(Guid tripId, Guid userId)
     {
         var trip = await GetTripEntityAsync(tripId);
 
-        if (trip.Status != TripStatus.Active)
+        if (trip.UserId != userId)
         {
-            throw new ConflictException($"Trip {tripId} is {trip.Status} and cannot be changed");
+            throw new ForbiddenException($"Trip {tripId} can be changed only by its author");
         }
 
         return trip;
     }
 
-    private static Period ToPeriod(PeriodViewModel period)
+    private sealed class ResolvedStop
     {
-        if (period == null || period.Start >= period.End)
+        public ResolvedStop(LocationEntity location, ActivityEntity? activity)
         {
-            throw new BadRequestException("Period start must be before period end");
+            Location = location;
+            Activity = activity;
         }
 
-        return new Period { Start = period.Start, End = period.End };
+        public LocationEntity Location { get; }
+        public ActivityEntity? Activity { get; }
+        public double DistanceFromPreviousKm { get; set; }
+        public string Name => Activity?.Name ?? Location.Name ?? Location.Street ?? Location.Id.ToString();
     }
 }

@@ -31,6 +31,4 @@ public class BookingEntity : BaseEntity
 
     public Guid? BudgetId { get; set; }
     public virtual BudgetEntity? Budget { get; set; }
-
-    public virtual TripEntity? Trip { get; set; }
 }

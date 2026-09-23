@@ -1,24 +1,27 @@
 using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TravellerAI.Core.Features.AddBookingCommand;
-using TravellerAI.Core.Features.AddTransportCommand;
-using TravellerAI.Core.Features.BuildTripCommand;
-using TravellerAI.Core.Features.GetTripStatusCommand;
-using TravellerAI.Core.Features.UpdateTripCommand;
-using TravellerAI.Domain.Enums;
+using TravellerAI.Auth;
+using TravellerAI.Core.Features.Trips.CreateTripCommand;
+using TravellerAI.Core.Features.Trips.DeleteTripCommand;
+using TravellerAI.Core.Features.Trips.GetTripCommand;
+using TravellerAI.Core.Features.Trips.SearchTripsCommand;
+using TravellerAI.Core.Features.Trips.UpdateTripCommand;
 using TravellerAI.Domain.ViewModels;
 using TravellerAI.Domain.ViewModels.Requests;
 
 namespace TravellerAI.WebApi.Controllers;
 
 /// <summary>
-/// Trips, their transports and bookings.
+/// Trip routes: one day, ordered locations and activities in one city.
 /// </summary>
 /// <remarks>
-/// Exceptions are translated to HTTP responses by GlobalExceptionHandler.
+/// Rules: 2-12 stops, the same country and city, limited distance between stops and per day.
+/// A trip used on a journey day starts at the hotel of the previous night and finishes at the hotel of the coming night.
 /// </remarks>
 [ApiController]
+[Authorize]
 [Route("api/trips")]
 [Produces("application/json")]
 public class TripController : ControllerBase
@@ -33,90 +36,78 @@ public class TripController : ControllerBase
     }
 
     /// <summary>
-    /// Returns trip status.
+    /// Public and own trips of the country, optionally from / to a location (e.g. a hotel).
     /// </summary>
-    [HttpGet("{tripId:guid}/status")]
-    [ProducesResponseType(typeof(StatusViewModel<TripStatus>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<StatusViewModel<TripStatus>>> GetStatus(Guid tripId, CancellationToken cancellationToken)
+    [HttpGet]
+    [ProducesResponseType(typeof(List<TripViewModel>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<List<TripViewModel>>> Search([FromQuery] TripSearchRequest request, CancellationToken cancellationToken)
     {
-        var status = await _mediator.Send(new GetTripStatusCommand { TripId = tripId }, cancellationToken);
+        var command = _mapper.Map<SearchTripsCommand>(request);
+        command.UserId = User.GetUserId();
 
-        return new StatusViewModel<TripStatus> { Id = tripId, Status = status };
+        return _mapper.Map<List<TripViewModel>>(await _mediator.Send(command, cancellationToken));
     }
 
     /// <summary>
-    /// Updates trip name, period, rating and (optionally) its booking.
+    /// Trip with its stops.
+    /// </summary>
+    [HttpGet("{tripId:guid}")]
+    [ProducesResponseType(typeof(TripViewModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TripViewModel>> Get(Guid tripId, CancellationToken cancellationToken)
+    {
+        var trip = await _mediator.Send(new GetTripCommand { TripId = tripId, UserId = User.GetUserId() }, cancellationToken);
+
+        return _mapper.Map<TripViewModel>(trip);
+    }
+
+    /// <summary>
+    /// Creates a trip; optimize=true reorders the stops between the first and the last one by the shortest route.
+    /// </summary>
+    [HttpPost]
+    [ProducesResponseType(typeof(TripViewModel), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TripViewModel>> Create([FromBody] TripRequest request, CancellationToken cancellationToken)
+    {
+        var command = _mapper.Map<CreateTripCommand>(request);
+        command.UserId = User.GetUserId();
+
+        var trip = _mapper.Map<TripViewModel>(await _mediator.Send(command, cancellationToken));
+
+        return CreatedAtAction(nameof(Get), new { tripId = trip.Id }, trip);
+    }
+
+    /// <summary>
+    /// Changes the trip (author only; not possible when other travellers or approved journeys use it).
     /// </summary>
     [HttpPut("{tripId:guid}")]
     [ProducesResponseType(typeof(TripViewModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<TripViewModel>> Update(Guid tripId, [FromBody] UpdateTripRequest request,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<TripViewModel>> Update(Guid tripId, [FromBody] TripRequest request, CancellationToken cancellationToken)
     {
         var command = _mapper.Map<UpdateTripCommand>(request);
         command.TripId = tripId;
+        command.UserId = User.GetUserId();
 
-        var trip = await _mediator.Send(command, cancellationToken);
-
-        return _mapper.Map<TripViewModel>(trip);
+        return _mapper.Map<TripViewModel>(await _mediator.Send(command, cancellationToken));
     }
 
     /// <summary>
-    /// Sets trip budget and period, applies journeys settings and transports, then recalculates totals.
+    /// Deletes the trip (author only; not possible when it is scheduled in journeys).
     /// </summary>
-    [HttpPost("{tripId:guid}/build")]
-    [ProducesResponseType(typeof(TripViewModel), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<TripViewModel>> Build(Guid tripId, [FromBody] BuildTripRequest request,
-        CancellationToken cancellationToken)
-    {
-        var command = _mapper.Map<BuildTripCommand>(request);
-        command.TripId = tripId;
-
-        var trip = await _mediator.Send(command, cancellationToken);
-
-        return _mapper.Map<TripViewModel>(trip);
-    }
-
-    /// <summary>
-    /// Adds transport to the trip (optionally linked to a journey).
-    /// </summary>
-    [HttpPost("{tripId:guid}/transports")]
-    [ProducesResponseType(typeof(TransportViewModel), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<TransportViewModel>> AddTransport(Guid tripId, [FromBody] AddTransportRequest request,
-        CancellationToken cancellationToken)
-    {
-        var command = _mapper.Map<AddTransportCommand>(request);
-        command.TripId = tripId;
-
-        var transport = await _mediator.Send(command, cancellationToken);
-
-        return StatusCode(StatusCodes.Status201Created, _mapper.Map<TransportViewModel>(transport));
-    }
-
-    /// <summary>
-    /// Adds a new booking to the trip. A previous not frozen booking is cancelled.
-    /// </summary>
-    [HttpPost("{tripId:guid}/bookings")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [HttpDelete("{tripId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<bool>> AddBooking(Guid tripId, [FromBody] AddBookingRequest request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid tripId, CancellationToken cancellationToken)
     {
-        var command = _mapper.Map<AddBookingCommand>(request);
-        command.TripId = tripId;
+        await _mediator.Send(new DeleteTripCommand { TripId = tripId, UserId = User.GetUserId() }, cancellationToken);
 
-        return await _mediator.Send(command, cancellationToken);
+        return NoContent();
     }
 }

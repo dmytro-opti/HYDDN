@@ -11,12 +11,24 @@ namespace TravellerAI.Core.Services;
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IRepository<ActivityEntity> _activityRepository;
+    private readonly ITripRepository _tripRepository;
+    private readonly IRepository<CountryEntity> _countryRepository;
+    private readonly IIdentityService _identityService;
+    private readonly IValidationService _validationService;
     private readonly ILoggerService<UserService> _logger;
     private readonly IMapper _mapper;
 
-    public UserService(IUserRepository userRepository, ILoggerService<UserService> logger, IMapper mapper)
+    public UserService(IUserRepository userRepository, IRepository<ActivityEntity> activityRepository,
+        ITripRepository tripRepository, IRepository<CountryEntity> countryRepository, IIdentityService identityService,
+        IValidationService validationService, ILoggerService<UserService> logger, IMapper mapper)
     {
         _userRepository = userRepository;
+        _activityRepository = activityRepository;
+        _tripRepository = tripRepository;
+        _countryRepository = countryRepository;
+        _identityService = identityService;
+        _validationService = validationService;
         _logger = logger;
         _mapper = mapper;
     }
@@ -26,21 +38,6 @@ public class UserService : IUserService
         var user = await GetUserEntityAsync(userId);
 
         return _mapper.Map<UserModel>(user);
-    }
-
-    public async Task<bool> UpdatePasswordAsync(Guid userId, string oldPassword, string newPassword)
-    {
-        if (oldPassword == newPassword)
-        {
-            throw new BadRequestException("New password must differ from the old one");
-        }
-
-        var isUpdated = await _userRepository.UpdatePasswordAsync(userId, oldPassword, newPassword);
-
-        _logger.Log(isUpdated ? ErrorLevel.Low : ErrorLevel.Medium,
-            isUpdated ? $"User {userId} password was updated" : $"User {userId} password was not updated: old password mismatch");
-
-        return isUpdated;
     }
 
     public async Task UpdateNameAsync(Guid userId, string firstName, string lastName)
@@ -59,15 +56,14 @@ public class UserService : IUserService
             return;
         }
 
-        await EnsureEmailIsFreeAsync(email, userId);
-
-        await _userRepository.UpdateEmailAsync(userId, email);
-        _logger.Log(ErrorLevel.Low, $"User {userId} was updated successfully");
+        // identity login email and profile email are changed together
+        await _identityService.ChangeEmailAsync(userId, email);
+        _logger.Log(ErrorLevel.Low, $"User {userId} email was updated successfully");
     }
 
     public async Task RemoveUserAsync(Guid userId)
     {
-        await _userRepository.RemoveUserAsync(userId);
+        await _identityService.DeleteUserAsync(userId);
         _logger.Log(ErrorLevel.Low, $"User {userId} was removed");
     }
 
@@ -86,35 +82,33 @@ public class UserService : IUserService
 
     public async Task<bool> UpdateUserProfileAsync(UserModel user)
     {
+        var profile = user.Profile ?? throw new BadRequestException("Profile is not specified");
+
+        if (!await _validationService.ValidateBirthDate(profile))
+        {
+            throw new BadRequestException(
+                $"Age must be between {Constants.Validation.MinUserAge} and {Constants.Validation.MaxUserAge} years");
+        }
+
         var entity = await GetUserEntityAsync(user.Id);
-
-        var isEmailChanged = !string.Equals(entity.Email, user.Email, StringComparison.OrdinalIgnoreCase);
-        if (isEmailChanged)
-        {
-            await EnsureEmailIsFreeAsync(user.Email, user.Id);
-        }
-
-        // password can be changed only via UpdatePasswordAsync which verifies the old one
-        var password = entity.Password;
-        _mapper.Map(user, entity);
-        entity.Password = password;
-
-        if (isEmailChanged)
-        {
-            entity.IsEmailConfirmed = false;
-        }
+        entity.Name = user.Name;
+        entity.FirstName = user.FirstName;
+        entity.LastName = user.LastName;
 
         // profile preferences are stored in UserInfo, created on first profile update
         var info = entity.UserInfo ??= new UserInfoEntity();
-        info.Interests = user.Interests ?? new List<string>();
-        info.TravelStyle = user.TravelStyle;
-        info.LookingFor = user.LookingFor;
-        info.Languages = user.Languages ?? new List<string>();
-        info.PersonalityType = user.PersonalityType ?? new List<string>();
-        info.Age = user.Age;
-        info.ChoosenActivity = user.ChoosenActivity ?? new List<string>();
-        info.ChoosenTrip = user.ChoosenTrip ?? new List<string>();
-        info.MoneyAmount = user.MoneyAmount ?? new List<string>();
+        info.BirthDate = profile.BirthDate?.Date;
+        info.TravelStyle = profile.TravelStyle;
+        info.PersonalityType = profile.PersonalityType;
+        info.BudgetLevel = profile.BudgetLevel;
+        info.CompanionGender = profile.CompanionGender;
+        info.LookingFor = string.IsNullOrWhiteSpace(profile.LookingFor) ? null : profile.LookingFor.Trim();
+        info.Languages = profile.Languages.Select(l => l.Trim().ToLowerInvariant()).Distinct().ToList();
+        info.Interests = profile.Interests.Distinct().ToList();
+
+        Replace(info.ChosenActivities, await LoadAsync(_activityRepository, profile.ChosenActivities, "Activities"));
+        Replace(info.ChosenTrips, await LoadAsync(_tripRepository, profile.ChosenTrips, "Trips"));
+        Replace(info.PreferredCountries, await LoadAsync(_countryRepository, profile.PreferredCountries, "Countries"));
 
         await _userRepository.UpdateAsync(entity);
         _logger.Log(ErrorLevel.Low, $"User {user.Id} profile was updated successfully");
@@ -135,11 +129,35 @@ public class UserService : IUserService
         return user;
     }
 
-    private async Task EnsureEmailIsFreeAsync(string email, Guid userId)
+    /// <summary>
+    /// Loads related entities by ids; all ids must exist.
+    /// </summary>
+    private static async Task<IReadOnlyList<TEntity>> LoadAsync<TEntity>(IRepository<TEntity> repository,
+        IEnumerable<ReferenceModel> references, string name) where TEntity : BaseEntity
     {
-        if (await _userRepository.IsEmailTakenAsync(email, userId))
+        var ids = references.Select(r => r.Id).Distinct().ToList();
+        if (ids.Count == 0)
         {
-            throw new ConflictException($"Email {email} is already in use");
+            return Array.Empty<TEntity>();
+        }
+
+        var entities = await repository.FindAsync(e => ids.Contains(e.Id));
+
+        var missing = ids.Except(entities.Select(e => e.Id)).ToList();
+        if (missing.Count > 0)
+        {
+            throw new NotFoundException($"{name} not found: {string.Join(", ", missing)}");
+        }
+
+        return entities;
+    }
+
+    private static void Replace<TEntity>(ICollection<TEntity> collection, IEnumerable<TEntity> items)
+    {
+        collection.Clear();
+        foreach (var item in items)
+        {
+            collection.Add(item);
         }
     }
 }

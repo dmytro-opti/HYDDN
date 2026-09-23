@@ -48,7 +48,15 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
     /// Business / validation exceptions are expected outcomes and are logged without stack trace.
     /// </summary>
     private static bool IsExpected(Exception ex) =>
-        ex is ValidationException or BadRequestException or ForbiddenException or ConflictException or ResourceNotFoundException;
+        ex is ValidationException or BadRequestException or UnauthorizedException or ForbiddenException
+            or ConflictException or ResourceNotFoundException;
+
+    /// <summary>
+    /// Credentials and tokens are never written to logs.
+    /// </summary>
+    private static bool IsSensitive(string propertyName) =>
+        propertyName.Contains("Password", StringComparison.OrdinalIgnoreCase)
+        || propertyName.Contains("Token", StringComparison.OrdinalIgnoreCase);
 
     private string GetObjectProperties(object obj)
     {
@@ -73,7 +81,11 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
                 var propsInfo = obj.GetType().GetProperties();
                 for (int i = 0; i < propsInfo.Length; i++, props += ",")
                 {
-                    if (propsInfo[i].GetValue(obj) is ICollection)
+                    if (IsSensitive(propsInfo[i].Name))
+                    {
+                        props += $"{propsInfo[i].Name}:***";
+                    }
+                    else if (propsInfo[i].GetValue(obj) is ICollection)
                     {
                         var count = ((ICollection)propsInfo[i].GetValue(obj))!.Count;
                         props += $"{propsInfo[i].Name}: a collection with {count} elements";

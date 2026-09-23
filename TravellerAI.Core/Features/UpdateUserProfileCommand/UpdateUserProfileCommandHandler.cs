@@ -24,10 +24,6 @@ public class UpdateUserProfileCommandHandler : IRequestHandler<UpdateUserProfile
         _mapper.Map(request, user);
         await _userService.UpdateUserProfileAsync(user);
 
-        var updated = await _userService.GetUserAsync(request.UserId);
-        // never return credentials to the caller
-        updated.Password = string.Empty;
-
-        return updated;
+        return await _userService.GetUserAsync(request.UserId);
     }
 }

@@ -35,7 +35,9 @@ public class ValidatorBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest
 
         if (failures.Any())
         {
-            _logger.Warning("Validation errors - {CommandType} - Command: {@Command} - Errors: {@ValidationErrors}", typeName, request, failures);
+            // the command itself is not logged: it can contain credentials
+            _logger.Warning("Validation errors - {CommandType} - Errors: {ValidationErrors}", typeName,
+                failures.Select(f => $"{f.PropertyName}: {f.ErrorMessage}"));
 
             throw new ValidationException($"Command Validation Errors for type {typeof(TRequest).Name}", failures);
         }

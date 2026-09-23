@@ -1,23 +1,30 @@
-using System.Diagnostics.Contracts;
+using TravellerAI.Domain.Enums;
 
 namespace TravellerAI.Domain.Models;
-//Travel with who and recommendation Connection
+
+/// <summary>
+/// Travel preferences of the user (recommendations and companion matching).
+/// </summary>
 public class UserInfoModel
 {
-   // public TravelWithWhoModel TravelWithWho {get; set}
-    public UserModel User { get; set; }
-    public List<string> Interests { get; set; }
-    public string TravelStyle { get; set; }
-    public List<string> Points { get; set; }
-    public string LookingFor { get; set; }
-    public List<string> Languages { get; set; }
-    public List<string> PersonalityType { get; set; } // extrovert/introv/ambi
-    public int Age { get; set; }
-    public List<string> Genders { get; set; }
-    public string Destanation { get; set; }
-    public List<string> Point { get; set; }
-    public DateTime? JourneyDate { get; set; }
-    public List <string> ChoosenActivity {get; set;}
-    public List <string> ChoosenTrip {get; set;}
-    public List <string> MoneyAmount {get; set;} // Кількість грошей на подорож (мало, норм, багато)
+    public Guid UserId { get; set; }
+    public DateTime? BirthDate { get; set; }
+    public int? Age => BirthDate.HasValue ? CalculateAge(BirthDate.Value, DateTime.UtcNow) : null;
+    public TravelStyle? TravelStyle { get; set; }
+    public PersonalityType? PersonalityType { get; set; }
+    public BudgetLevel? BudgetLevel { get; set; }
+    public CompanionGender CompanionGender { get; set; }
+    public string? LookingFor { get; set; }
+    /// <summary>ISO 639-1 language codes.</summary>
+    public List<string> Languages { get; set; } = new();
+    public List<ActivityType> Interests { get; set; } = new();
+    public List<ReferenceModel> ChosenActivities { get; set; } = new();
+    public List<ReferenceModel> ChosenTrips { get; set; } = new();
+    public List<ReferenceModel> PreferredCountries { get; set; } = new();
+
+    public static int CalculateAge(DateTime birthDate, DateTime today)
+    {
+        var age = today.Year - birthDate.Year;
+        return birthDate.Date > today.Date.AddYears(-age) ? age - 1 : age;
+    }
 }

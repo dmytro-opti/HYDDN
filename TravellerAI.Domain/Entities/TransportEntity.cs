@@ -5,11 +5,9 @@ namespace TravellerAI.Domain.Entities;
 
 public class TransportEntity : BaseEntity
 {
-    public Guid TripId { get; set; }
-    public virtual TripEntity Trip { get; set; } = null!;
-
-    public Guid? JourneyId { get; set; }
-    public virtual JourneyEntity? Journey { get; set; }
+    /// <summary>Transport to the country / between cities of the journey.</summary>
+    public Guid JourneyId { get; set; }
+    public virtual JourneyEntity Journey { get; set; } = null!;
 
     public TransportType Type { get; set; }
     public string Company { get; set; } = string.Empty;

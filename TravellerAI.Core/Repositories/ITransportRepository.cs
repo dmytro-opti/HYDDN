@@ -4,5 +4,5 @@ namespace TravellerAI.Core.Repositories;
 
 public interface ITransportRepository : IRepository<TransportEntity>
 {
-    public Task<IReadOnlyList<TransportEntity>> GetByTripAsync(Guid tripId, CancellationToken cancellationToken = default);
+    public Task<IReadOnlyList<TransportEntity>> GetByJourneyAsync(Guid journeyId, CancellationToken cancellationToken = default);
 }
