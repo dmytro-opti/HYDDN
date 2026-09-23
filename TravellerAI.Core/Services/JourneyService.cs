@@ -1,5 +1,6 @@
 using TravellerAI.Core.Features.BuildJourneyCommand;
 using TravellerAI.Core.Interfaces;
+using TravellerAI.Domain.Enums;
 using TravellerAI.Domain.Models;
 using TravellerAI.Domain.ViewModels;
 
@@ -14,7 +15,7 @@ public class JourneyService : IJourneyService
 
     Task<JourneyModel> IJourneyService.GetJourneyAsync(Guid tripId)
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public Task<Guid> GetJourney(Guid tripId)
@@ -38,6 +39,11 @@ public class JourneyService : IJourneyService
     }
 
     public Task AddTransport(JourneyModel journey, TransportViewModel transport)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<JourneyStatus> GetJourneyStatusAsync(Guid journeyId)
     {
         throw new NotImplementedException();
     }
