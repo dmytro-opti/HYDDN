@@ -2,6 +2,7 @@ using AutoMapper;
 using TravellerAI.Core.Interfaces;
 using TravellerAI.Core.Repositories;
 using TravellerAI.Domain.Entities;
+using TravellerAI.Domain.Entities.Owned;
 using TravellerAI.Domain.Enums;
 using TravellerAI.Core.Exceptions;
 using TravellerAI.Domain.Models;
@@ -11,23 +12,42 @@ namespace TravellerAI.Core.Services;
 public class TransportService : ITransportService
 {
     private readonly ITransportRepository _transportRepository;
-    private readonly ITripRepository _tripRepository;
+    private readonly IJourneyRepository _journeyRepository;
     private readonly ILoggerService<TransportService> _logger;
     private readonly IMapper _mapper;
 
-    public TransportService(ITransportRepository transportRepository, ITripRepository tripRepository,
+    public TransportService(ITransportRepository transportRepository, IJourneyRepository journeyRepository,
         ILoggerService<TransportService> logger, IMapper mapper)
     {
         _transportRepository = transportRepository;
-        _tripRepository = tripRepository;
+        _journeyRepository = journeyRepository;
         _logger = logger;
         _mapper = mapper;
     }
 
-    public Task<string> SearchTransport(TransportModel transport)
+    /// <summary>
+    /// Searches stored transports of not cancelled journeys by the criteria, cheapest first.
+    /// </summary>
+    public async Task<List<TransportModel>> SearchTransportsAsync(TransportSearchModel criteria)
     {
-        // requires an external transport provider
-        throw new NotImplementedException();
+        if (criteria.DepartureFrom > criteria.DepartureTo)
+        {
+            throw new BadRequestException("DepartureFrom must be before DepartureTo");
+        }
+
+        var company = string.IsNullOrWhiteSpace(criteria.Company) ? null : criteria.Company.Trim();
+
+        var transports = await _transportRepository.FindAsync(t =>
+            t.Journey.Status != JourneyStatus.Cancelled
+            && (criteria.Type == null || t.Type == criteria.Type)
+            && (criteria.SeatClass == null || t.SeatClass == criteria.SeatClass)
+            && (company == null || t.Company.Contains(company))
+            && (criteria.MaxPrice == null || t.Price <= criteria.MaxPrice)
+            && t.SeatCount >= criteria.MinSeats
+            && (criteria.DepartureFrom == null || (t.Period != null && t.Period.Start >= criteria.DepartureFrom))
+            && (criteria.DepartureTo == null || (t.Period != null && t.Period.Start <= criteria.DepartureTo)));
+
+        return _mapper.Map<List<TransportModel>>(transports.OrderBy(t => t.Price).ThenBy(t => t.Period?.Start));
     }
 
     /// <summary>
@@ -54,35 +74,41 @@ public class TransportService : ITransportService
             .ToList();
     }
 
-    public async Task<TransportModel> AddTransportAsync(Guid TripId, Guid? JourneyId, TransportType Type, string Company, SeatClass SeatClass,
-        int SeatCount, decimal Price = 0)
+    public async Task<TransportModel> AddTransportAsync(Guid journeyId, TransportType type, string company, SeatClass seatClass,
+        int seatCount, decimal price = 0, PeriodModel? period = null)
     {
-        if (Price < 0)
+        if (price < 0)
         {
             throw new BadRequestException("Transport price cannot be negative");
         }
 
-        var trip = await _tripRepository.GetByIdAsync(TripId)
-                   ?? throw new NotFoundException("Trip", TripId);
-
-        if (trip.Status != TripStatus.Active)
+        if (period != null && period.Start >= period.End)
         {
-            throw new ConflictException($"Trip {TripId} is {trip.Status}, transport cannot be added");
+            throw new BadRequestException("Departure has to be before arrival");
+        }
+
+        var journey = await _journeyRepository.GetByIdAsync(journeyId)
+                      ?? throw new NotFoundException("Journey", journeyId);
+
+        if (journey.Status == JourneyStatus.Cancelled)
+        {
+            throw new ConflictException($"Journey {journeyId} is cancelled, transport cannot be added");
         }
 
         var transport = new TransportEntity
         {
-            TripId = TripId,
-            JourneyId = JourneyId,
-            Type = Type,
-            Company = Company,
-            SeatClass = SeatClass,
-            SeatCount = SeatCount,
-            Price = Price
+            JourneyId = journeyId,
+            Type = type,
+            Company = company.Trim(),
+            SeatClass = seatClass,
+            SeatCount = seatCount,
+            Price = price,
+            Period = period == null ? null : new Period { Start = period.Start, End = period.End },
+            Duration = period == null ? TimeSpan.Zero : period.End - period.Start
         };
 
         await _transportRepository.AddAsync(transport);
-        _logger.Log(ErrorLevel.Low, $"Transport {transport.Id} was added to trip {TripId}");
+        _logger.Log(ErrorLevel.Low, $"Transport {transport.Id} was added to journey {journeyId}");
 
         return _mapper.Map<TransportModel>(transport);
     }

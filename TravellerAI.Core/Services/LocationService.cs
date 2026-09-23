@@ -18,7 +18,7 @@ public class LocationService : ILocationService
     }
 
     /// <summary>
-    /// Returns locations of the country, optionally narrowed to the city.
+    /// Returns locations of the country (name or ISO code), optionally narrowed to the city.
     /// Comparison is case-insensitive (default SQL Server collation).
     /// </summary>
     public async Task<IEnumerable<LocationModel>> GetLocationByCountryAndCity(string country, string? city)
@@ -27,7 +27,7 @@ public class LocationService : ILocationService
         city = string.IsNullOrWhiteSpace(city) ? null : city.Trim();
 
         var locations = await _locationRepository.FindAsync(l =>
-            l.Country == country && (city == null || l.City == city));
+            (l.Country.Name == country || l.Country.Code == country) && (city == null || l.City == city));
 
         return _mapper.Map<List<LocationModel>>(locations
             .OrderBy(l => l.City)

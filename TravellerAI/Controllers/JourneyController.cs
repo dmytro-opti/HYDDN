@@ -1,6 +1,8 @@
 using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TravellerAI.Auth;
 using TravellerAI.Core.Features.BuildJourneyCommand;
 using TravellerAI.Core.Features.GetJourneyStatusCommand;
 using TravellerAI.Domain.Enums;
@@ -16,6 +18,7 @@ namespace TravellerAI.WebApi.Controllers;
 /// Exceptions are translated to HTTP responses by GlobalExceptionHandler.
 /// </remarks>
 [ApiController]
+[Authorize]
 [Route("api/journeys")]
 [Produces("application/json")]
 public class JourneyController : ControllerBase
@@ -38,7 +41,10 @@ public class JourneyController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Guid>> Create([FromBody] CreateJourneyRequest request, CancellationToken cancellationToken)
     {
-        var journeyId = await _mediator.Send(_mapper.Map<BuildJourneyCommand>(request), cancellationToken);
+        var command = _mapper.Map<BuildJourneyCommand>(request);
+        command.UserId = User.GetUserId();
+
+        var journeyId = await _mediator.Send(command, cancellationToken);
 
         return CreatedAtAction(nameof(GetStatus), new { journeyId }, journeyId);
     }
@@ -51,7 +57,7 @@ public class JourneyController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<StatusViewModel<JourneyStatus>>> GetStatus(Guid journeyId, CancellationToken cancellationToken)
     {
-        var status = await _mediator.Send(new GetJourneyStatusCommand { JourneyId = journeyId }, cancellationToken);
+        var status = await _mediator.Send(new GetJourneyStatusCommand { JourneyId = journeyId, UserId = User.GetUserId() }, cancellationToken);
 
         return new StatusViewModel<JourneyStatus> { Id = journeyId, Status = status };
     }

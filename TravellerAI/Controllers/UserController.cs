@@ -1,6 +1,8 @@
 using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TravellerAI.Auth;
 using TravellerAI.Core.Features.GetUserProfileCommand;
 using TravellerAI.Core.Features.UpdateUserProfileCommand;
 using TravellerAI.Core.Features.User.UpdateUserEmailCommand;
@@ -17,6 +19,7 @@ namespace TravellerAI.WebApi.Controllers;
 /// (validation - 400, forbidden - 403, not found - 404, conflict - 409).
 /// </remarks>
 [ApiController]
+[Authorize]
 [Route("api/users")]
 [Produces("application/json")]
 public class UserController : ControllerBase
@@ -31,31 +34,32 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    /// Returns user profile info (preferences, interests, languages).
+    /// Returns travel preferences of the current user.
     /// </summary>
-    [HttpGet("{userId:guid}/profile")]
+    [HttpGet("me/profile")]
     [ProducesResponseType(typeof(UserProfileViewModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserProfileViewModel>> GetProfile(Guid userId, CancellationToken cancellationToken)
+    public async Task<ActionResult<UserProfileViewModel>> GetProfile(CancellationToken cancellationToken)
     {
+        var userId = User.GetUserId();
         var profile = await _mediator.Send(new GetUserProfileCommand { UserId = userId }, cancellationToken);
 
         return _mapper.Map<UserProfileViewModel>(profile);
     }
 
     /// <summary>
-    /// Updates user name, email and profile preferences. Password is changed separately.
+    /// Updates names and travel preferences of the current user. Email and password have their own endpoints.
     /// </summary>
-    [HttpPut("{userId:guid}/profile")]
+    [HttpPut("me/profile")]
     [ProducesResponseType(typeof(UserViewModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<UserViewModel>> UpdateProfile(Guid userId, [FromBody] UpdateUserProfileRequest request,
+    public async Task<ActionResult<UserViewModel>> UpdateProfile([FromBody] UpdateUserProfileRequest request,
         CancellationToken cancellationToken)
     {
         var command = _mapper.Map<UpdateUserProfileCommand>(request);
-        command.UserId = userId;
+        command.UserId = User.GetUserId();
 
         var user = await _mediator.Send(command, cancellationToken);
 
@@ -63,18 +67,18 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    /// Changes user email. The new email has to be confirmed again.
+    /// Changes email (also the login) of the current user. The new email has to be confirmed again.
     /// </summary>
-    [HttpPut("{userId:guid}/email")]
+    [HttpPut("me/email")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> UpdateEmail(Guid userId, [FromBody] UpdateUserEmailRequest request,
+    public async Task<IActionResult> UpdateEmail([FromBody] UpdateUserEmailRequest request,
         CancellationToken cancellationToken)
     {
         var command = _mapper.Map<UpdateUserEmailCommand>(request);
-        command.UserId = userId;
+        command.UserId = User.GetUserId();
 
         await _mediator.Send(command, cancellationToken);
 

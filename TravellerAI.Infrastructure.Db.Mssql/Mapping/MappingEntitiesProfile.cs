@@ -15,18 +15,16 @@ public class MappingEntitiesProfile : Profile
 
         // Entity -> Model
         CreateMap<UserEntity, UserModel>()
-            // profile preferences are stored in UserInfo
-            .ForMember(m => m.Interests, o => o.MapFrom(e => e.UserInfo!.Interests))
-            .ForMember(m => m.TravelStyle, o => o.MapFrom(e => e.UserInfo!.TravelStyle))
-            .ForMember(m => m.LookingFor, o => o.MapFrom(e => e.UserInfo!.LookingFor))
-            .ForMember(m => m.Languages, o => o.MapFrom(e => e.UserInfo!.Languages))
-            .ForMember(m => m.PersonalityType, o => o.MapFrom(e => e.UserInfo!.PersonalityType))
-            .ForMember(m => m.Age, o => o.MapFrom(e => e.UserInfo != null ? e.UserInfo.Age : 0))
-            .ForMember(m => m.ChoosenActivity, o => o.MapFrom(e => e.UserInfo!.ChoosenActivity))
-            .ForMember(m => m.ChoosenTrip, o => o.MapFrom(e => e.UserInfo!.ChoosenTrip))
-            .ForMember(m => m.MoneyAmount, o => o.MapFrom(e => e.UserInfo!.MoneyAmount));
-        CreateMap<UserInfoEntity, UserInfoModel>()
-            .ForMember(m => m.Destanation, o => o.MapFrom(e => e.Destination));
+            // travel preferences are stored in UserInfo
+            .ForMember(m => m.Profile, o => o.MapFrom(e => e.UserInfo));
+        CreateMap<UserInfoEntity, UserInfoModel>();
+        // related objects of the profile are returned as id + name
+        CreateMap<ActivityEntity, ReferenceModel>();
+        CreateMap<TripEntity, ReferenceModel>();
+        CreateMap<CountryEntity, ReferenceModel>();
+        CreateMap<CountryEntity, CountryModel>();
+        CreateMap<NotificationEntity, NotificationModel>()
+            .ForMember(m => m.CreatedAt, o => o.MapFrom(e => e.Created));
         CreateMap<JourneyEntity, JourneyModel>();
         CreateMap<TripEntity, TripModel>()
             .ForMember(m => m.TripId, o => o.MapFrom(e => e.Id));
@@ -45,12 +43,13 @@ public class MappingEntitiesProfile : Profile
             .ForMember(m => m.PlaceID, o => o.MapFrom(e => e.PlaceId ?? Guid.Empty))
             .ForMember(m => m.CreatedAt, o => o.MapFrom(e => e.Created));
         CreateMap<ActivityEntity, ActivityModel>();
-        CreateMap<LocationEntity, LocationModel>();
+        CreateMap<LocationEntity, LocationModel>()
+            .ForMember(m => m.Country, o => o.MapFrom(e => e.Country.Name));
 
         // Model -> Entity (scalar values only)
         CreateMap<UserModel, UserEntity>().IgnoreEntityManagedMembers();
-        CreateMap<UserInfoModel, UserInfoEntity>().IgnoreEntityManagedMembers()
-            .ForMember(e => e.Destination, o => o.MapFrom(m => m.Destanation));
+        CreateMap<UserInfoModel, UserInfoEntity>().IgnoreEntityManagedMembers();
+        CreateMap<CountryModel, CountryEntity>().IgnoreEntityManagedMembers();
         CreateMap<JourneyModel, JourneyEntity>().IgnoreEntityManagedMembers();
         CreateMap<TripModel, TripEntity>().IgnoreEntityManagedMembers();
         CreateMap<BookingModel, BookingEntity>().IgnoreEntityManagedMembers()

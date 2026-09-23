@@ -1,18 +1,30 @@
-using TravellerAI.Domain.Enums;
-
 namespace TravellerAI.Domain.ViewModels;
 
 public class TripViewModel
 {
-    public Guid TripId { get; set; }
+    public Guid Id { get; set; }
     public string Name { get; set; }
-    public TripStatus Status { get; set; }
+    public string Description { get; set; }
     public double Rating { get; set; }
-    public PeriodViewModel Period { get; set; }
-    public Guid UserId { get; set; }
-    public Guid? JourneyId { get; set; }
-    public string JourneyTitle { get; set; }
-    public BudgetViewModel Budget { get; set; }
-    public BookingViewModel Booking { get; set; }
-    public List<TransportViewModel> Transports { get; set; }
+    public bool IsPublic { get; set; }
+    public Guid CountryId { get; set; }
+    public string Country { get; set; }
+    public string City { get; set; }
+    public double DistanceKm { get; set; }
+    public Guid AuthorId { get; set; }
+    public List<TripStopViewModel> Stops { get; set; }
+}
+
+public class TripStopViewModel
+{
+    public int Order { get; set; }
+    public Guid LocationId { get; set; }
+    public string? LocationName { get; set; }
+    public string LocationStreet { get; set; }
+    public double? LocationLatitude { get; set; }
+    public double? LocationLongitude { get; set; }
+    public Guid? ActivityId { get; set; }
+    public string? ActivityName { get; set; }
+    public decimal? ActivityPrice { get; set; }
+    public double DistanceFromPreviousKm { get; set; }
 }

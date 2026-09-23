@@ -1,10 +1,14 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using TravellerAI.Core;
 using TravellerAI.Domain.Entities;
+using TravellerAI.Infrastructure.Db.Mssql.Identity;
 
 namespace TravellerAI.Infrastructure.Db.Mssql.Context;
 
-public class TravellerDbContext : DbContext
+public class TravellerDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
 {
     public TravellerDbContext(DbContextOptions<TravellerDbContext> options) : base(options)
     {
@@ -21,6 +25,13 @@ public class TravellerDbContext : DbContext
     public DbSet<ReviewEntity> Reviews => Set<ReviewEntity>();
     public DbSet<ActivityEntity> Activities => Set<ActivityEntity>();
     public DbSet<LocationEntity> Locations => Set<LocationEntity>();
+    public DbSet<CountryEntity> Countries => Set<CountryEntity>();
+    public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
+    public DbSet<RefreshTokenEntity> RefreshTokens => Set<RefreshTokenEntity>();
+
+    // fixed ids: roles are created by migrations in every environment
+    public static readonly Guid UserRoleId = Guid.Parse("0f8fad5b-d9cb-469f-a165-70867728950e");
+    public static readonly Guid AdminRoleId = Guid.Parse("7c9e6679-7425-40de-944b-e07fc1f90ae7");
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -29,8 +40,10 @@ public class TravellerDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Identity tables (AspNetUsers, AspNetRoles, ...)
         base.OnModelCreating(modelBuilder);
 
+        ConfigureIdentity(modelBuilder);
         ConfigureUsers(modelBuilder);
         ConfigureJourneys(modelBuilder);
         ConfigureTrips(modelBuilder);
@@ -40,6 +53,8 @@ public class TravellerDbContext : DbContext
         ConfigureReviews(modelBuilder);
         ConfigureActivities(modelBuilder);
         ConfigureLocations(modelBuilder);
+        ConfigureCountries(modelBuilder);
+        ConfigureNotifications(modelBuilder);
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
@@ -87,6 +102,42 @@ public class TravellerDbContext : DbContext
             && r.TargetEntry.Metadata.IsOwned()
             && r.TargetEntry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted);
 
+    private static void ConfigureIdentity(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ApplicationUser>(builder =>
+        {
+            // profile shares the primary key with the identity user and is removed with it
+            builder.HasOne(u => u.Profile)
+                .WithOne()
+                .HasForeignKey<UserEntity>(p => p.Id)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<IdentityRole<Guid>>().HasData(
+            new IdentityRole<Guid>
+            {
+                Id = UserRoleId, Name = Constants.Security.UserRole, NormalizedName = Constants.Security.UserRole.ToUpperInvariant(),
+                ConcurrencyStamp = "3b6c3c3e-4a8e-4a51-9f1e-0d5f1f6d2a11"
+            },
+            new IdentityRole<Guid>
+            {
+                Id = AdminRoleId, Name = Constants.Security.AdminRole, NormalizedName = Constants.Security.AdminRole.ToUpperInvariant(),
+                ConcurrencyStamp = "8e2f7a4b-2c1d-4f3e-9a6b-5d4c3b2a1f00"
+            });
+
+        modelBuilder.Entity<RefreshTokenEntity>(builder =>
+        {
+            builder.ToTable("RefreshTokens");
+            builder.Property(t => t.TokenHash).HasMaxLength(64).IsRequired();
+            builder.HasIndex(t => t.TokenHash).IsUnique();
+
+            builder.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
     private static void ConfigureUsers(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<UserEntity>(builder =>
@@ -107,9 +158,27 @@ public class TravellerDbContext : DbContext
         modelBuilder.Entity<UserInfoEntity>(builder =>
         {
             builder.ToTable("UserInfos");
-            builder.Property(i => i.TravelStyle).HasMaxLength(200);
             builder.Property(i => i.LookingFor).HasMaxLength(500);
-            builder.Property(i => i.Destination).HasMaxLength(200);
+            builder.HasIndex(i => i.UserId).IsUnique();
+
+            builder.HasMany(i => i.ChosenActivities)
+                .WithMany()
+                .UsingEntity<Dictionary<string, object>>("UserInfoChosenActivities",
+                    right => right.HasOne<ActivityEntity>().WithMany().HasForeignKey("ActivityId").OnDelete(DeleteBehavior.Cascade),
+                    left => left.HasOne<UserInfoEntity>().WithMany().HasForeignKey("UserInfoId").OnDelete(DeleteBehavior.Cascade));
+
+            // ClientCascade on the trip side: Users -> Trips -> links would be a second cascade path from Users
+            builder.HasMany(i => i.ChosenTrips)
+                .WithMany(t => t.ChosenBy)
+                .UsingEntity<Dictionary<string, object>>("UserInfoChosenTrips",
+                    right => right.HasOne<TripEntity>().WithMany().HasForeignKey("TripId").OnDelete(DeleteBehavior.ClientCascade),
+                    left => left.HasOne<UserInfoEntity>().WithMany().HasForeignKey("UserInfoId").OnDelete(DeleteBehavior.Cascade));
+
+            builder.HasMany(i => i.PreferredCountries)
+                .WithMany()
+                .UsingEntity<Dictionary<string, object>>("UserInfoPreferredCountries",
+                    right => right.HasOne<CountryEntity>().WithMany().HasForeignKey("CountryId").OnDelete(DeleteBehavior.Cascade),
+                    left => left.HasOne<UserInfoEntity>().WithMany().HasForeignKey("UserInfoId").OnDelete(DeleteBehavior.Cascade));
         });
     }
 
@@ -297,10 +366,45 @@ public class TravellerDbContext : DbContext
         modelBuilder.Entity<LocationEntity>(builder =>
         {
             builder.ToTable("Locations");
-            builder.Property(l => l.Country).HasMaxLength(100);
+            builder.Property(l => l.Name).HasMaxLength(200);
             builder.Property(l => l.City).HasMaxLength(100);
+            builder.HasIndex(l => new { l.CountryId, l.City });
+
+            // locations are used by places and activities, a country with locations cannot be removed
+            builder.HasOne(l => l.Country)
+                .WithMany(c => c.Locations)
+                .HasForeignKey(l => l.CountryId)
+                .OnDelete(DeleteBehavior.Restrict);
             builder.Property(l => l.Street).HasMaxLength(200);
             builder.Property(l => l.ZipCode).HasMaxLength(20);
+        });
+    }
+
+    private static void ConfigureCountries(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<CountryEntity>(builder =>
+        {
+            builder.ToTable("Countries");
+            builder.Property(c => c.Name).HasMaxLength(100).IsRequired();
+            builder.Property(c => c.Code).HasMaxLength(2).IsFixedLength().IsRequired();
+            builder.HasIndex(c => c.Name).IsUnique();
+            builder.HasIndex(c => c.Code).IsUnique();
+        });
+    }
+
+    private static void ConfigureNotifications(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<NotificationEntity>(builder =>
+        {
+            builder.ToTable("Notifications");
+            builder.Property(n => n.Title).HasMaxLength(200).IsRequired();
+            builder.Property(n => n.Message).HasMaxLength(1000).IsRequired();
+            builder.HasIndex(n => new { n.UserId, n.IsRead });
+
+            builder.HasOne(n => n.User)
+                .WithMany(u => u.Notifications)
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

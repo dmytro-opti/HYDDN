@@ -1,5 +1,6 @@
 using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TravellerAI.Core.Features.GetAvailableLocationCommand;
 using TravellerAI.Domain.ViewModels;
@@ -14,6 +15,7 @@ namespace TravellerAI.WebApi.Controllers;
 /// Exceptions are translated to HTTP responses by GlobalExceptionHandler.
 /// </remarks>
 [ApiController]
+[AllowAnonymous]
 [Route("api/locations")]
 [Produces("application/json")]
 public class LocationController : ControllerBase

@@ -7,12 +7,14 @@ using TravellerAI.Middleware;
 using TravellerAI.Settings;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.RegisterApplicationServices();
 builder.Services.RegisterDatabase(builder.Configuration);
+builder.Services.RegisterAuthentication(builder.Configuration);
 builder.Services.AddControllersWithViews(options =>
     {
         // request validation is done by FluentValidation validators in the MediatR pipeline
@@ -53,6 +55,19 @@ builder.Services.AddSwaggerGen(swaggerGenOptions =>
     // XML docs of the solution projects (GenerateDocumentationFile), controller summaries are used for groups
     List<string> xmlFiles = Directory.GetFiles(AppContext.BaseDirectory, "TravellerAI*.xml", SearchOption.TopDirectoryOnly).ToList();
     xmlFiles.ForEach(xmlFile => swaggerGenOptions.IncludeXmlComments(xmlFile, includeControllerXmlComments: true));
+
+    // "Authorize" button: paste the access token from /api/auth/login
+    swaggerGenOptions.AddSecurityDefinition(BearerScheme, new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "JWT access token from /api/auth/login or /api/auth/register"
+    });
+    swaggerGenOptions.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference(BearerScheme, document)] = []
+    });
 });
 
 
@@ -89,6 +104,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
 app.MapControllerRoute(
@@ -98,3 +116,8 @@ app.MapControllerRoute(
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+public partial class Program
+{
+    private const string BearerScheme = "Bearer";
+}

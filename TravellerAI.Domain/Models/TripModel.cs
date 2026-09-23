@@ -1,20 +1,19 @@
-using TravellerAI.Domain.Enums;
-
 namespace TravellerAI.Domain.Models;
 
+/// <summary>
+/// One-day route between locations and activities in one city.
+/// </summary>
 public class TripModel
 {
-    public Guid TripId { get; set; }
-    public string Name  { get; set; }
-    public UserModel User { get; set; }
-    public GroupModel Group { get; set; }
-    public JourneyModel Journey { get; set; }
-    public BudgetModel Budget { get; set; }
-    public BookingModel Booking { get; set; }
-    public IEnumerable<TransportModel> Transports { get; set; }
-    public DiscountModel Discount { get; set; }
-    public MapModel Map { get; set; }
-    public PeriodModel Period { get; set; }
+    public Guid Id { get; set; }
+    public string Name { get; set; }
+    public string Description { get; set; }
     public double Rating { get; set; }
-    public TripStatus Status { get; set; }
+    public bool IsPublic { get; set; }
+    public Guid CountryId { get; set; }
+    public string Country { get; set; }
+    public string City { get; set; }
+    public double DistanceKm { get; set; }
+    public Guid AuthorId { get; set; }
+    public List<TripStopModel> Stops { get; set; } = new();
 }

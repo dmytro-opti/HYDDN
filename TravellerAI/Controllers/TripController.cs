@@ -1,6 +1,8 @@
 using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TravellerAI.Auth;
 using TravellerAI.Core.Features.AddBookingCommand;
 using TravellerAI.Core.Features.AddTransportCommand;
 using TravellerAI.Core.Features.BuildTripCommand;
@@ -19,6 +21,7 @@ namespace TravellerAI.WebApi.Controllers;
 /// Exceptions are translated to HTTP responses by GlobalExceptionHandler.
 /// </remarks>
 [ApiController]
+[Authorize]
 [Route("api/trips")]
 [Produces("application/json")]
 public class TripController : ControllerBase
@@ -40,7 +43,7 @@ public class TripController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<StatusViewModel<TripStatus>>> GetStatus(Guid tripId, CancellationToken cancellationToken)
     {
-        var status = await _mediator.Send(new GetTripStatusCommand { TripId = tripId }, cancellationToken);
+        var status = await _mediator.Send(new GetTripStatusCommand { TripId = tripId, UserId = User.GetUserId() }, cancellationToken);
 
         return new StatusViewModel<TripStatus> { Id = tripId, Status = status };
     }
@@ -58,6 +61,7 @@ public class TripController : ControllerBase
     {
         var command = _mapper.Map<UpdateTripCommand>(request);
         command.TripId = tripId;
+        command.UserId = User.GetUserId();
 
         var trip = await _mediator.Send(command, cancellationToken);
 
@@ -77,6 +81,7 @@ public class TripController : ControllerBase
     {
         var command = _mapper.Map<BuildTripCommand>(request);
         command.TripId = tripId;
+        command.UserId = User.GetUserId();
 
         var trip = await _mediator.Send(command, cancellationToken);
 
@@ -96,6 +101,7 @@ public class TripController : ControllerBase
     {
         var command = _mapper.Map<AddTransportCommand>(request);
         command.TripId = tripId;
+        command.UserId = User.GetUserId();
 
         var transport = await _mediator.Send(command, cancellationToken);
 
@@ -116,6 +122,7 @@ public class TripController : ControllerBase
     {
         var command = _mapper.Map<AddBookingCommand>(request);
         command.TripId = tripId;
+        command.UserId = User.GetUserId();
 
         return await _mediator.Send(command, cancellationToken);
     }

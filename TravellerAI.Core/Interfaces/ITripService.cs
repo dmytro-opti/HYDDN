@@ -1,19 +1,19 @@
-using TravellerAI.Core.Features.BuildTripCommand;
-using TravellerAI.Domain.Enums;
 using TravellerAI.Domain.Models;
-using TravellerAI.Domain.ViewModels;
 
 namespace TravellerAI.Core.Interfaces;
 
+/// <summary>
+/// Catalog of one-day trip routes.
+/// </summary>
 public interface ITripService
 {
-    Task<Guid> CreateTrip(BuildTripCommand command);
-    Task<TripModel> GetTripAsync(Guid tripId);
-    Task<Guid> DeleteTrip(Guid tripId);
-    Task<Guid> AddPeriodTrip(BuildTripCommand command);
-    Task SelectPeriod(TripModel trip, PeriodViewModel period);
-    Task Build(TripModel trip);
-    Task<TripModel> Show(TripModel trip);
-    Task<bool> UpdateTripAsync(TripModel trip);
-    Task<TripStatus> GetTripStatusAsync(Guid tripId);
+    /// <summary>Validates stops (same country and city, distances) and saves the route.</summary>
+    Task<TripModel> CreateTripAsync(Guid userId, TripDraftModel draft);
+    /// <summary>Author only; trips used by other users or approved journeys cannot be changed.</summary>
+    Task<TripModel> UpdateTripAsync(Guid userId, Guid tripId, TripDraftModel draft);
+    /// <summary>Author only; trips scheduled in journeys cannot be deleted.</summary>
+    Task DeleteTripAsync(Guid userId, Guid tripId);
+    /// <summary>Public trips or own trips.</summary>
+    Task<TripModel> GetTripAsync(Guid userId, Guid tripId);
+    Task<IReadOnlyList<TripModel>> SearchTripsAsync(Guid userId, Guid countryId, string? city, Guid? startLocationId, Guid? endLocationId);
 }

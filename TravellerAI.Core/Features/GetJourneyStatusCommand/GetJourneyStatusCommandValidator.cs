@@ -9,5 +9,8 @@ public class GetJourneyStatusCommandValidator : AbstractValidator<GetJourneyStat
         RuleFor(x => x.JourneyId)
             .NotEmpty()
             .WithMessage("JourneyId cannot be empty");
+        RuleFor(x => x.UserId)
+            .NotEmpty()
+            .WithMessage("UserId cannot be empty");
     }
 }

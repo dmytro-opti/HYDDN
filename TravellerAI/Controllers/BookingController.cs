@@ -1,6 +1,8 @@
 using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TravellerAI.Auth;
 using TravellerAI.Core.Features.SelectBookingCommand;
 using TravellerAI.Core.Features.UpdateBookingCommand;
 using TravellerAI.Domain.ViewModels.Requests;
@@ -14,6 +16,7 @@ namespace TravellerAI.WebApi.Controllers;
 /// Exceptions are translated to HTTP responses by GlobalExceptionHandler.
 /// </remarks>
 [ApiController]
+[Authorize]
 [Route("api/bookings")]
 [Produces("application/json")]
 public class BookingController : ControllerBase
@@ -41,6 +44,7 @@ public class BookingController : ControllerBase
     {
         var command = _mapper.Map<UpdateBookingCommand>(request);
         command.BookingId = bookingId;
+        command.UserId = User.GetUserId();
 
         return await _mediator.Send(command, cancellationToken);
     }
@@ -60,6 +64,7 @@ public class BookingController : ControllerBase
     {
         var command = _mapper.Map<SelectBookingCommand>(request);
         command.BookingId = bookingId;
+        command.UserId = User.GetUserId();
 
         var isSelected = await _mediator.Send(command, cancellationToken);
         if (!isSelected)
