@@ -125,6 +125,11 @@ public class TravellerDbContext : DbContext
                 .WithMany(u => u.Journeys)
                 .HasForeignKey(j => j.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(j => j.Budget)
+                .WithOne()
+                .HasForeignKey<JourneyEntity>(j => j.BudgetId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
     }
 
@@ -174,6 +179,11 @@ public class TravellerDbContext : DbContext
             builder.Property(b => b.PaymentMethod).HasMaxLength(100);
             builder.OwnsOne(b => b.Period);
             builder.HasIndex(b => new { b.PropertyId, b.CheckInDate, b.CheckOutDate });
+            builder.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Bookings_Dates", "[CheckInDate] <= [CheckOutDate]");
+                t.HasCheckConstraint("CK_Bookings_Guests", "[Adults] >= 0 AND [Children] >= 0");
+            });
 
             builder.HasOne(b => b.User)
                 .WithMany(u => u.Bookings)
@@ -205,6 +215,7 @@ public class TravellerDbContext : DbContext
             builder.Property(t => t.Company).HasMaxLength(200).IsRequired();
             // SQL "time" is limited to 24h, store duration as ticks instead
             builder.Property(t => t.Duration).HasConversion<long>();
+            builder.ToTable(t => t.HasCheckConstraint("CK_Transports_SeatCount", "[SeatCount] >= 0"));
             builder.OwnsOne(t => t.Period);
 
             builder.HasOne(t => t.Trip)
@@ -246,16 +257,23 @@ public class TravellerDbContext : DbContext
         {
             builder.ToTable("Reviews");
             builder.Property(r => r.Title).HasMaxLength(200);
+            builder.ToTable(t => t.HasCheckConstraint("CK_Reviews_Target", "[PlaceId] IS NOT NULL OR [ActivityId] IS NOT NULL"));
 
             builder.HasOne(r => r.User)
                 .WithMany(u => u.Reviews)
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // ClientCascade: a DB cascade would add a second path Users -> Places -> Reviews
             builder.HasOne(r => r.Place)
                 .WithMany(p => p.Reviews)
                 .HasForeignKey(r => r.PlaceId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.ClientCascade);
+
+            builder.HasOne(r => r.Activity)
+                .WithMany(a => a.Reviews)
+                .HasForeignKey(r => r.ActivityId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 
@@ -270,11 +288,6 @@ public class TravellerDbContext : DbContext
             builder.HasOne(a => a.Location)
                 .WithMany()
                 .HasForeignKey(a => a.LocationId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
-
-            builder.HasOne(a => a.Review)
-                .WithMany()
-                .HasForeignKey(a => a.ReviewId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
         });
     }

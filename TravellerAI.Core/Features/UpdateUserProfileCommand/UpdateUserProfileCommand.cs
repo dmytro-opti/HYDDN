@@ -8,7 +8,6 @@ public class UpdateUserProfileCommand : IRequest<UserModel>
     public Guid UserId { get; set; }
     public string Name { get; set; }
     public string LastName { get; set; }
-    public string Password { get; set; }
     public string Email { get; set; }
     public List<string> Interests { get; set; }
     public string TravelStyle { get; set; }
@@ -19,5 +18,4 @@ public class UpdateUserProfileCommand : IRequest<UserModel>
     public List <string> ChoosenActivity {get; set;}
     public List <string> ChoosenTrip {get; set;}
     public List <string> MoneyAmount {get; set;}
-    public IEnumerable<JourneyModel> Journeys { get; set; }
 }

@@ -6,7 +6,6 @@ using TravellerAI.Core.Repositories;
 using TravellerAI.Domain.Entities;
 using TravellerAI.Domain.Entities.Owned;
 using TravellerAI.Domain.Enums;
-using TravellerAI.Domain.Exceptions;
 using TravellerAI.Domain.Models;
 using TravellerAI.Domain.ViewModels;
 
@@ -32,7 +31,7 @@ public class JourneyService : IJourneyService
     {
         if (!await _userRepository.ExistsAsync(command.UserId))
         {
-            throw new ResourceNotFoundException($"User {command.UserId} not found");
+            throw new NotFoundException("User", command.UserId);
         }
 
         var journey = new JourneyEntity
@@ -61,7 +60,7 @@ public class JourneyService : IJourneyService
     {
         if (!await _journeyRepository.DeleteAsync(journeyId))
         {
-            throw new ResourceNotFoundException($"Journey {journeyId} not found");
+            throw new NotFoundException("Journey", journeyId);
         }
 
         _logger.Log(ErrorLevel.Low, $"Journey {journeyId} was deleted");
@@ -71,28 +70,37 @@ public class JourneyService : IJourneyService
 
     public async Task SelectPeriod(JourneyModel journey, PeriodViewModel period)
     {
-        if (period.Start >= period.End)
+        if (period == null || period.Start >= period.End)
         {
             throw new BadRequestException("Period start must be before period end");
         }
 
-        var entity = await GetJourneyEntityAsync(journey.Id);
+        var entity = await GetActiveJourneyEntityAsync(journey.Id);
         entity.Period = new Period { Start = period.Start, End = period.End };
         await _journeyRepository.UpdateAsync(entity);
 
         journey.Period = _mapper.Map<PeriodModel>(entity.Period);
     }
 
-    public Task SetMembers(JourneyModel journey, IEnumerable<string> members)
+    public async Task SetMembers(JourneyModel journey, IEnumerable<string> members)
     {
-        // requires Group / members model which is not defined yet
-        throw new NotImplementedException();
+        var entity = await GetActiveJourneyEntityAsync(journey.Id);
+
+        entity.Members = (members ?? Enumerable.Empty<string>())
+            .Where(m => !string.IsNullOrWhiteSpace(m))
+            .Select(m => m.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        await _journeyRepository.UpdateAsync(entity);
+
+        journey.Members = entity.Members;
     }
 
-    public Task AddTransport(JourneyModel journey, TransportViewModel transport)
+    public async Task<JourneyStatus> GetJourneyStatusAsync(Guid journeyId)
     {
-        // transport has to be linked to a trip, but TransportViewModel does not carry a TripId yet
-        throw new NotImplementedException();
+        var journey = await GetJourneyEntityAsync(journeyId);
+
+        return journey.Status;
     }
 
     private async Task<JourneyEntity> GetJourneyEntityAsync(Guid journeyId)
@@ -102,7 +110,22 @@ public class JourneyService : IJourneyService
         if (journey == null)
         {
             _logger.Log(ErrorLevel.Medium, $"Journey {journeyId} not found");
-            throw new ResourceNotFoundException($"Journey {journeyId} not found");
+            throw new NotFoundException("Journey", journeyId);
+        }
+
+        return journey;
+    }
+
+    /// <summary>
+    /// Only active journeys can be changed.
+    /// </summary>
+    private async Task<JourneyEntity> GetActiveJourneyEntityAsync(Guid journeyId)
+    {
+        var journey = await GetJourneyEntityAsync(journeyId);
+
+        if (journey.Status != JourneyStatus.Active)
+        {
+            throw new ConflictException($"Journey {journeyId} is {journey.Status} and cannot be changed");
         }
 
         return journey;

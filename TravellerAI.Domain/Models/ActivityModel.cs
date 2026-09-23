@@ -13,6 +13,6 @@ public class ActivityModel
     public decimal Rating { get; set; }
     public string ImageUrl { get; set; }
     public string VideoUrl { get; set; }
-    public ReviewModel Review { get; set; }
+    public IEnumerable<ReviewModel> Reviews { get; set; }
     public PeriodModel Period { get; set; }
 }

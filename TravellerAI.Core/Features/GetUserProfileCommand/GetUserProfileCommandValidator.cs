@@ -7,7 +7,6 @@ public class GetUserProfileCommandValidator : AbstractValidator<GetUserProfileCo
     public GetUserProfileCommandValidator()
     {
         RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("UserId cannot be empty")
-            .NotNull().WithMessage("UserId cannot be null");
+            .NotEmpty().WithMessage("UserId cannot be empty");
     }
 }

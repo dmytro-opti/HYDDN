@@ -4,6 +4,7 @@ public class ReviewModel
     public Guid Id { get; set; }
     public Guid UserID { get; set; }
     public Guid PlaceID { get; set; }
+    public Guid? ActivityId { get; set; }
     public int Rating { get; set; }
     public string Coment { get; set; }
     public string Titel { get; set; }

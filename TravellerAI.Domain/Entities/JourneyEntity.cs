@@ -9,6 +9,10 @@ public class JourneyEntity : BaseEntity
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public virtual Period? Period { get; set; }
+    public List<string> Members { get; set; } = new();
+
+    public Guid? BudgetId { get; set; }
+    public virtual BudgetEntity? Budget { get; set; }
 
     public Guid UserId { get; set; }
     public virtual UserEntity User { get; set; } = null!;

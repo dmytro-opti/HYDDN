@@ -6,7 +6,6 @@ using TravellerAI.Core.Repositories;
 using TravellerAI.Domain.Entities;
 using TravellerAI.Domain.Entities.Owned;
 using TravellerAI.Domain.Enums;
-using TravellerAI.Domain.Exceptions;
 using TravellerAI.Domain.Models;
 using TravellerAI.Domain.ViewModels;
 
@@ -34,13 +33,14 @@ public class TripService : ITripService
 
         if (!await _userRepository.ExistsAsync(userId))
         {
-            throw new ResourceNotFoundException($"User {userId} not found");
+            throw new NotFoundException("User", userId);
         }
 
         var trip = new TripEntity
         {
             Name = command.Name,
             UserId = userId,
+            Status = TripStatus.Active,
             Period = command.Period == null ? null : ToPeriod(command.Period),
             Budget = command.Budget > 0 ? new BudgetEntity { Budget = command.Budget } : null
         };
@@ -62,7 +62,7 @@ public class TripService : ITripService
     {
         if (!await _tripRepository.DeleteAsync(tripId))
         {
-            throw new ResourceNotFoundException($"Trip {tripId} not found");
+            throw new NotFoundException("Trip", tripId);
         }
 
         _logger.Log(ErrorLevel.Low, $"Trip {tripId} was deleted");
@@ -72,7 +72,7 @@ public class TripService : ITripService
 
     public async Task<Guid> AddPeriodTrip(BuildTripCommand command)
     {
-        var trip = await GetTripEntityAsync(command.TripId);
+        var trip = await GetActiveTripEntityAsync(command.TripId);
 
         trip.Period = ToPeriod(command.Period);
         await _tripRepository.UpdateAsync(trip);
@@ -82,7 +82,7 @@ public class TripService : ITripService
 
     public async Task SelectPeriod(TripModel trip, PeriodViewModel period)
     {
-        var entity = await GetTripEntityAsync(trip.TripId);
+        var entity = await GetActiveTripEntityAsync(trip.TripId);
 
         entity.Period = ToPeriod(period);
         await _tripRepository.UpdateAsync(entity);
@@ -91,21 +91,25 @@ public class TripService : ITripService
     }
 
     /// <summary>
-    /// Recalculates trip budget total from transports and booking.
+    /// Recalculates budget totals of the trip (and of its journey) from transports and bookings.
     /// </summary>
     public async Task Build(TripModel trip)
     {
-        var entity = await GetTripEntityAsync(trip.TripId);
-
-        var total = entity.Transports.Sum(t => t.Price) + (entity.Booking?.TotalPrice ?? 0);
+        var entity = await GetActiveTripEntityAsync(trip.TripId);
 
         entity.Budget ??= new BudgetEntity();
-        entity.Budget.Total = total;
+        entity.Budget.Total = CalculateTripCost(entity);
+
+        if (entity.Journey?.Budget != null)
+        {
+            entity.Journey.Budget.Total = entity.Journey.Trips.Sum(CalculateTripCost);
+        }
+
         await _tripRepository.UpdateAsync(entity);
 
-        if (entity.Budget.Budget > 0 && total > entity.Budget.Budget)
+        if (entity.Budget.Budget > 0 && entity.Budget.Total > entity.Budget.Budget)
         {
-            _logger.Log(ErrorLevel.Medium, $"Trip {entity.Id} exceeds its budget: {total} > {entity.Budget.Budget}");
+            _logger.Log(ErrorLevel.Medium, $"Trip {entity.Id} exceeds its budget: {entity.Budget.Total} > {entity.Budget.Budget}");
         }
     }
 
@@ -116,7 +120,7 @@ public class TripService : ITripService
 
     public async Task<bool> UpdateTripAsync(TripModel trip)
     {
-        var entity = await GetTripEntityAsync(trip.TripId);
+        var entity = await GetActiveTripEntityAsync(trip.TripId);
 
         _mapper.Map(trip, entity);
 
@@ -131,24 +135,45 @@ public class TripService : ITripService
         return true;
     }
 
+    public async Task<TripStatus> GetTripStatusAsync(Guid tripId)
+    {
+        var trip = await GetTripEntityAsync(tripId);
+
+        return trip.Status;
+    }
+
     private void UpsertBooking(TripEntity trip, BookingModel booking)
     {
-        if (trip.Booking != null && trip.Booking.Id == booking.BookingId)
+        var current = trip.Booking;
+
+        if (current is { IsFrozen: true })
         {
-            _mapper.Map(booking, trip.Booking);
+            throw new ConflictException($"Booking {current.Id} of trip {trip.Id} is frozen and cannot be changed");
+        }
+
+        if (current != null && current.Id == booking.BookingId)
+        {
+            _mapper.Map(booking, current);
             return;
         }
 
         // a new booking replaces the previous one, which is cancelled
-        if (trip.Booking != null)
+        if (current != null)
         {
-            trip.Booking.Status = BookingStatus.Cancelled;
+            current.Status = BookingStatus.Cancelled;
         }
 
         var newBooking = _mapper.Map<BookingEntity>(booking);
         newBooking.UserId = trip.UserId;
         newBooking.JourneyId ??= trip.JourneyId;
         trip.Booking = newBooking;
+    }
+
+    private static decimal CalculateTripCost(TripEntity trip)
+    {
+        var bookingCost = trip.Booking is { Status: not BookingStatus.Cancelled } booking ? booking.TotalPrice : 0;
+
+        return trip.Transports.Sum(t => t.Price) + bookingCost;
     }
 
     private async Task<TripEntity> GetTripEntityAsync(Guid tripId)
@@ -158,7 +183,22 @@ public class TripService : ITripService
         if (trip == null)
         {
             _logger.Log(ErrorLevel.Medium, $"Trip {tripId} not found");
-            throw new ResourceNotFoundException($"Trip {tripId} not found");
+            throw new NotFoundException("Trip", tripId);
+        }
+
+        return trip;
+    }
+
+    /// <summary>
+    /// Only active trips can be changed.
+    /// </summary>
+    private async Task<TripEntity> GetActiveTripEntityAsync(Guid tripId)
+    {
+        var trip = await GetTripEntityAsync(tripId);
+
+        if (trip.Status != TripStatus.Active)
+        {
+            throw new ConflictException($"Trip {tripId} is {trip.Status} and cannot be changed");
         }
 
         return trip;

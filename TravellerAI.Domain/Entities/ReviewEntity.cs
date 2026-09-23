@@ -8,6 +8,10 @@ public class ReviewEntity : BaseEntity
     public Guid? PlaceId { get; set; }
     public virtual PlaceEntity? Place { get; set; }
 
+    /// <summary>Review targets either a place or an activity.</summary>
+    public Guid? ActivityId { get; set; }
+    public virtual ActivityEntity? Activity { get; set; }
+
     public int Rating { get; set; }
     public string? Comment { get; set; }
     public string? Title { get; set; }

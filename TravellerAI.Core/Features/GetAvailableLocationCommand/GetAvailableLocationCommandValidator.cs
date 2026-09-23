@@ -1,21 +1,22 @@
 using FluentValidation;
+using static TravellerAI.Core.Constants.Validation;
 
 namespace TravellerAI.Core.Features.GetAvailableLocationCommand;
 
 public class GetAvailableLocationCommandValidator : AbstractValidator<GetAvailableLocationListCommand>
 {
-    public int maxStringLenght = 100;
-    public  GetAvailableLocationCommandValidator()
+    public GetAvailableLocationCommandValidator()
     {
         RuleFor(x => x.Country)
             .NotEmpty()
             .WithMessage("Country is required")
-            .MaximumLength(maxStringLenght)
-            .WithMessage($"Country cannot be longer than {maxStringLenght} characters");
+            .MaximumLength(MaxLocationNameLength)
+            .WithMessage($"Country cannot be longer than {MaxLocationNameLength} characters");
+
+        // city is optional - all locations of the country are returned without it
         RuleFor(x => x.City)
-            .NotEmpty()
-            .WithMessage("City is required")
-            .MaximumLength(maxStringLenght)
-            .WithMessage($"City cannot be longer than {maxStringLenght} characters");
+            .MaximumLength(MaxLocationNameLength)
+            .WithMessage($"City cannot be longer than {MaxLocationNameLength} characters")
+            .When(x => x.City != null);
     }
 }

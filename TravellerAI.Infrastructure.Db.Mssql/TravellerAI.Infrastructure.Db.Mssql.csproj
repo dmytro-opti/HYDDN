@@ -18,4 +18,8 @@
       <ProjectReference Include="..\TravellerAI.Domain\TravellerAI.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <EmbeddedResource Include="Scripts\SeedTestData.sql" />
+    </ItemGroup>
+
 </Project>

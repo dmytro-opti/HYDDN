@@ -14,7 +14,17 @@ public class MappingEntitiesProfile : Profile
         CreateMap<Period, PeriodModel>().ReverseMap();
 
         // Entity -> Model
-        CreateMap<UserEntity, UserModel>();
+        CreateMap<UserEntity, UserModel>()
+            // profile preferences are stored in UserInfo
+            .ForMember(m => m.Interests, o => o.MapFrom(e => e.UserInfo!.Interests))
+            .ForMember(m => m.TravelStyle, o => o.MapFrom(e => e.UserInfo!.TravelStyle))
+            .ForMember(m => m.LookingFor, o => o.MapFrom(e => e.UserInfo!.LookingFor))
+            .ForMember(m => m.Languages, o => o.MapFrom(e => e.UserInfo!.Languages))
+            .ForMember(m => m.PersonalityType, o => o.MapFrom(e => e.UserInfo!.PersonalityType))
+            .ForMember(m => m.Age, o => o.MapFrom(e => e.UserInfo != null ? e.UserInfo.Age : 0))
+            .ForMember(m => m.ChoosenActivity, o => o.MapFrom(e => e.UserInfo!.ChoosenActivity))
+            .ForMember(m => m.ChoosenTrip, o => o.MapFrom(e => e.UserInfo!.ChoosenTrip))
+            .ForMember(m => m.MoneyAmount, o => o.MapFrom(e => e.UserInfo!.MoneyAmount));
         CreateMap<UserInfoEntity, UserInfoModel>()
             .ForMember(m => m.Destanation, o => o.MapFrom(e => e.Destination));
         CreateMap<JourneyEntity, JourneyModel>();
@@ -24,7 +34,8 @@ public class MappingEntitiesProfile : Profile
             .ForMember(m => m.BookingId, o => o.MapFrom(e => e.Id))
             .ForMember(m => m.CreatedAt, o => o.MapFrom(e => e.Created))
             .ForMember(m => m.JourneyId, o => o.MapFrom(e => e.JourneyId ?? Guid.Empty))
-            .ForMember(m => m.PropertyId, o => o.MapFrom(e => e.PropertyId ?? Guid.Empty));
+            .ForMember(m => m.PropertyId, o => o.MapFrom(e => e.PropertyId ?? Guid.Empty))
+            .ForMember(m => m.RoomId, o => o.MapFrom(e => e.RoomId ?? Guid.Empty));
         CreateMap<BudgetEntity, BudgetModel>();
         CreateMap<TransportEntity, TransportModel>();
         CreateMap<PlaceEntity, PlaceModel>();
@@ -44,7 +55,8 @@ public class MappingEntitiesProfile : Profile
         CreateMap<TripModel, TripEntity>().IgnoreEntityManagedMembers();
         CreateMap<BookingModel, BookingEntity>().IgnoreEntityManagedMembers()
             .ForMember(e => e.JourneyId, o => o.MapFrom(m => ToNullable(m.JourneyId)))
-            .ForMember(e => e.PropertyId, o => o.MapFrom(m => ToNullable(m.PropertyId)));
+            .ForMember(e => e.PropertyId, o => o.MapFrom(m => ToNullable(m.PropertyId)))
+            .ForMember(e => e.RoomId, o => o.MapFrom(m => ToNullable(m.RoomId)));
         CreateMap<BudgetModel, BudgetEntity>().IgnoreEntityManagedMembers();
         CreateMap<TransportModel, TransportEntity>().IgnoreEntityManagedMembers();
         CreateMap<PlaceModel, PlaceEntity>().IgnoreEntityManagedMembers();

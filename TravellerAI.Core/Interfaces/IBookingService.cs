@@ -12,7 +12,7 @@ public interface IBookingService
     Task<bool> UpdateBookingAsync(BookingModel booking);
     Task <string> AddBankCard();
     Task <string> AddBooking();
-    Task<bool> IsValidAsync();
+    Task<bool> IsValidAsync(BookingModel booking);
 }
 
 

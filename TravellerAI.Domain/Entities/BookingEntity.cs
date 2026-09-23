@@ -15,7 +15,8 @@ public class BookingEntity : BaseEntity
     public Guid? PropertyId { get; set; }
     public virtual PlaceEntity? Property { get; set; }
 
-    public Guid RoomId { get; set; }
+    /// <summary>Room of the booked property (rooms are not modelled yet).</summary>
+    public Guid? RoomId { get; set; }
     public virtual Period? Period { get; set; }
     public decimal TotalPrice { get; set; }
     public string Currency { get; set; } = "USD";

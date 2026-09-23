@@ -3,7 +3,7 @@ using TravellerAI.Core.Interfaces;
 using TravellerAI.Core.Repositories;
 using TravellerAI.Domain.Entities;
 using TravellerAI.Domain.Enums;
-using TravellerAI.Domain.Exceptions;
+using TravellerAI.Core.Exceptions;
 using TravellerAI.Domain.Models;
 
 namespace TravellerAI.Core.Services;
@@ -55,11 +55,19 @@ public class TransportService : ITransportService
     }
 
     public async Task<TransportModel> AddTransportAsync(Guid TripId, Guid? JourneyId, TransportType Type, string Company, SeatClass SeatClass,
-        int SeatCount)
+        int SeatCount, decimal Price = 0)
     {
-        if (!await _tripRepository.ExistsAsync(TripId))
+        if (Price < 0)
         {
-            throw new ResourceNotFoundException($"Trip {TripId} not found");
+            throw new BadRequestException("Transport price cannot be negative");
+        }
+
+        var trip = await _tripRepository.GetByIdAsync(TripId)
+                   ?? throw new NotFoundException("Trip", TripId);
+
+        if (trip.Status != TripStatus.Active)
+        {
+            throw new ConflictException($"Trip {TripId} is {trip.Status}, transport cannot be added");
         }
 
         var transport = new TransportEntity
@@ -69,7 +77,8 @@ public class TransportService : ITransportService
             Type = Type,
             Company = Company,
             SeatClass = SeatClass,
-            SeatCount = SeatCount
+            SeatCount = SeatCount,
+            Price = Price
         };
 
         await _transportRepository.AddAsync(transport);

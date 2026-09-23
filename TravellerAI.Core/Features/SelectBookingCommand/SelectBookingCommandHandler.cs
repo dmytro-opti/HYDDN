@@ -1,4 +1,5 @@
 using MediatR;
+using TravellerAI.Core.Exceptions;
 using TravellerAI.Core.Interfaces;
 
 namespace TravellerAI.Core.Features.SelectBookingCommand;
@@ -17,42 +18,38 @@ public class SelectBookingCommandHandler : IRequestHandler<SelectBookingCommand,
         _bookingService = bookingService;
     }
     
+    /// <summary>
+    /// Freezes the trip booking when it is valid. Returns false when the booking is not valid.
+    /// </summary>
     public async Task<bool> Handle(SelectBookingCommand command, CancellationToken cancellationToken)
     {
-        // check user availability
-        var userModel = await _userService.GetUserAsync(command.UserId);
-        if (userModel == null)
-        {
-            throw new Exception($"User {command.UserId} does not exist");
-        }
-        
-        // check trip
+        // both throw NotFoundException when missing
+        await _userService.GetUserAsync(command.UserId);
         var tripModel = await _tripService.GetTripAsync(command.TripId);
-        
-        if (tripModel != null 
-            && tripModel.User?.Id == command.UserId 
-            && tripModel.Booking?.BookingId == command.BookingId)
-        {
-            var isValid = await _bookingService.IsValidAsync();
 
-            if (isValid)
-            {
-                tripModel.Booking.IsFrozen = true;
-            }
-
-            return await _bookingService.UpdateBookingAsync(tripModel.Booking);
-        }
-        
-        switch (tripModel)
+        if (tripModel.User?.Id != command.UserId)
         {
-            case var x when x == null:
-                throw new Exception($"Trip {command.TripId} does not exist");
-            case var x when x.Booking == null:
-                throw new Exception($"Booking {command.BookingId} for trip {tripModel.TripId} does not exist");
-            case var x when x.User == null:
-                throw new Exception($"User {command.UserId} for trip {tripModel.TripId} does not exist");
-            default:
-                throw new Exception("Unexpected error");
+            throw new ForbiddenException($"Trip {command.TripId} does not belong to user {command.UserId}");
         }
+
+        var booking = tripModel.Booking;
+        if (booking == null || booking.BookingId != command.BookingId)
+        {
+            throw new NotFoundException($"Booking {command.BookingId} for trip {command.TripId} not found");
+        }
+
+        if (booking.IsFrozen)
+        {
+            throw new ConflictException($"Booking {command.BookingId} has already been selected");
+        }
+
+        if (!await _bookingService.IsValidAsync(booking))
+        {
+            return false;
+        }
+
+        booking.IsFrozen = true;
+
+        return await _bookingService.UpdateBookingAsync(booking);
     }
 }

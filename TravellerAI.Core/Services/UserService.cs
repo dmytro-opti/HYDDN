@@ -2,8 +2,8 @@ using AutoMapper;
 using TravellerAI.Core.Exceptions;
 using TravellerAI.Core.Interfaces;
 using TravellerAI.Core.Repositories;
+using TravellerAI.Domain.Entities;
 using TravellerAI.Domain.Enums;
-using TravellerAI.Domain.Exceptions;
 using TravellerAI.Domain.Models;
 
 namespace TravellerAI.Core.Services;
@@ -23,13 +23,7 @@ public class UserService : IUserService
 
     public async Task<UserModel> GetUserAsync(Guid userId)
     {
-        var user = await _userRepository.GetUserAsync(userId);
-
-        if (user == null)
-        {
-            _logger.Log(ErrorLevel.High, $"User {userId} not found");
-            throw new ResourceNotFoundException($"User {userId} not found");
-        }
+        var user = await GetUserEntityAsync(userId);
 
         return _mapper.Map<UserModel>(user);
     }
@@ -59,16 +53,13 @@ public class UserService : IUserService
     {
         var user = await GetUserAsync(userId);
 
-        if (user.Email == email)
+        if (string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
         {
             _logger.Log(ErrorLevel.Low, $"User {userId} has already been updated");
             return;
         }
 
-        if (await _userRepository.IsEmailTakenAsync(email, userId))
-        {
-            throw new BadRequestException($"Email {email} is already in use");
-        }
+        await EnsureEmailIsFreeAsync(email, userId);
 
         await _userRepository.UpdateEmailAsync(userId, email);
         _logger.Log(ErrorLevel.Low, $"User {userId} was updated successfully");
@@ -80,12 +71,75 @@ public class UserService : IUserService
         _logger.Log(ErrorLevel.Low, $"User {userId} was removed");
     }
 
-    public async Task<UserInfoModel?> GetUserInfoAsync(Guid userId)
+    public async Task<UserInfoModel> GetUserInfoAsync(Guid userId)
     {
-        var user = await _userRepository.GetUserAsync(userId)
-                   ?? throw new ResourceNotFoundException($"User {userId} not found");
+        var user = await GetUserEntityAsync(userId);
 
         // lazy loaded
-        return user.UserInfo == null ? null : _mapper.Map<UserInfoModel>(user.UserInfo);
+        if (user.UserInfo == null)
+        {
+            throw new NotFoundException($"User {userId} has no profile info");
+        }
+
+        return _mapper.Map<UserInfoModel>(user.UserInfo);
+    }
+
+    public async Task<bool> UpdateUserProfileAsync(UserModel user)
+    {
+        var entity = await GetUserEntityAsync(user.Id);
+
+        var isEmailChanged = !string.Equals(entity.Email, user.Email, StringComparison.OrdinalIgnoreCase);
+        if (isEmailChanged)
+        {
+            await EnsureEmailIsFreeAsync(user.Email, user.Id);
+        }
+
+        // password can be changed only via UpdatePasswordAsync which verifies the old one
+        var password = entity.Password;
+        _mapper.Map(user, entity);
+        entity.Password = password;
+
+        if (isEmailChanged)
+        {
+            entity.IsEmailConfirmed = false;
+        }
+
+        // profile preferences are stored in UserInfo, created on first profile update
+        var info = entity.UserInfo ??= new UserInfoEntity();
+        info.Interests = user.Interests ?? new List<string>();
+        info.TravelStyle = user.TravelStyle;
+        info.LookingFor = user.LookingFor;
+        info.Languages = user.Languages ?? new List<string>();
+        info.PersonalityType = user.PersonalityType ?? new List<string>();
+        info.Age = user.Age;
+        info.ChoosenActivity = user.ChoosenActivity ?? new List<string>();
+        info.ChoosenTrip = user.ChoosenTrip ?? new List<string>();
+        info.MoneyAmount = user.MoneyAmount ?? new List<string>();
+
+        await _userRepository.UpdateAsync(entity);
+        _logger.Log(ErrorLevel.Low, $"User {user.Id} profile was updated successfully");
+
+        return true;
+    }
+
+    private async Task<UserEntity> GetUserEntityAsync(Guid userId)
+    {
+        var user = await _userRepository.GetUserAsync(userId);
+
+        if (user == null)
+        {
+            _logger.Log(ErrorLevel.High, $"User {userId} not found");
+            throw new NotFoundException("User", userId);
+        }
+
+        return user;
+    }
+
+    private async Task EnsureEmailIsFreeAsync(string email, Guid userId)
+    {
+        if (await _userRepository.IsEmailTakenAsync(email, userId))
+        {
+            throw new ConflictException($"Email {email} is already in use");
+        }
     }
 }

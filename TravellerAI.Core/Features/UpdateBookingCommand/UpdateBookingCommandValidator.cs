@@ -1,4 +1,5 @@
 using FluentValidation;
+using static TravellerAI.Core.Constants.Validation;
 
 namespace TravellerAI.Core.Features.UpdateBookingCommand;
 
@@ -7,30 +8,28 @@ public class UpdateBookingCommandValidator : AbstractValidator<UpdateBookingComm
     public UpdateBookingCommandValidator()
     {
         RuleFor(input => input.UserId)
-            .NotNull()
-            .Must(x => Guid.TryParse(x.ToString(), out Guid _))
-            .WithMessage("UserId cannot be null");
+            .NotEmpty()
+            .WithMessage("UserId cannot be empty");
         
         RuleFor(input => input.BookingId)
-            .NotNull()
-            .Must(x => Guid.TryParse(x.ToString(), out Guid _))
-            .WithMessage("BookingId cannot be null");
+            .NotEmpty()
+            .WithMessage("BookingId cannot be empty");
         
         RuleFor(input => input.Period)
             .NotNull()
             .WithMessage("Period cannot be null");
         
         RuleFor(input => input.Period)
-            .NotNull()
-            .Must(x => x.Start < x.End && x.Start > DateTime.Now.AddDays(1))
-            .WithMessage("Selected period must be after start date and at least one day before today");
+            .Must(x => x.Start < x.End && x.Start > DateTime.UtcNow.AddDays(MinDaysBeforeBooking))
+            .When(input => input.Period != null)
+            .WithMessage($"Period start must be before its end and at least {MinDaysBeforeBooking} day(s) from now");
         
         RuleFor(input => input.Children)
-            .GreaterThanOrEqualTo(0)
-            .WithMessage("Children must be greater than or equal 0");
+            .GreaterThanOrEqualTo(MinChildren)
+            .WithMessage($"Children must be greater than or equal {MinChildren}");
         
         RuleFor(input => input.Adults)
-            .GreaterThanOrEqualTo(1)
-            .WithMessage("Trip should be greater than or equal 1");
+            .GreaterThanOrEqualTo(MinAdults)
+            .WithMessage($"Adults must be greater than or equal {MinAdults}");
     }
 }

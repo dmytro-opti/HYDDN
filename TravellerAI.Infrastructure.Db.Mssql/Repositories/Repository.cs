@@ -1,5 +1,7 @@
 using System.Linq.Expressions;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using TravellerAI.Core.Exceptions;
 using TravellerAI.Core.Repositories;
 using TravellerAI.Domain.Entities;
 using TravellerAI.Infrastructure.Db.Mssql.Context;
@@ -11,6 +13,11 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Repositories;
 /// </summary>
 public class Repository<TEntity> : IRepository<TEntity> where TEntity : BaseEntity
 {
+    // SQL Server error numbers
+    private const int UniqueConstraintViolation = 2627;
+    private const int UniqueIndexViolation = 2601;
+    private const int ForeignKeyViolation = 547;
+
     protected readonly TravellerDbContext Context;
     protected readonly DbSet<TEntity> DbSet;
 
@@ -44,7 +51,7 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : BaseEnti
     public virtual async Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
         await DbSet.AddAsync(entity, cancellationToken);
-        await Context.SaveChangesAsync(cancellationToken);
+        await SaveChangesAsync(cancellationToken);
 
         return entity;
     }
@@ -57,7 +64,7 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : BaseEnti
             DbSet.Update(entity);
         }
 
-        await Context.SaveChangesAsync(cancellationToken);
+        await SaveChangesAsync(cancellationToken);
     }
 
     public virtual async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -69,8 +76,40 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : BaseEnti
         }
 
         DbSet.Remove(entity);
-        await Context.SaveChangesAsync(cancellationToken);
+        await SaveChangesAsync(cancellationToken);
 
         return true;
+    }
+
+    /// <summary>
+    /// Saves changes and translates provider exceptions into application exceptions.
+    /// </summary>
+    protected async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var entityName = typeof(TEntity).Name.Replace("Entity", string.Empty);
+
+        try
+        {
+            await Context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new ConflictException($"{entityName} was changed or removed by another request, please retry", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is SqlException sql)
+        {
+            throw sql.Number switch
+            {
+                UniqueConstraintViolation or UniqueIndexViolation =>
+                    new ConflictException($"{entityName} with the same unique values already exists", ex),
+                ForeignKeyViolation =>
+                    new ConflictException($"{entityName} cannot be saved or removed because of related data", ex),
+                _ => new RepositoryException($"Failed to save {entityName}", ex)
+            };
+        }
+        catch (DbUpdateException ex)
+        {
+            throw new RepositoryException($"Failed to save {entityName}", ex);
+        }
     }
 }

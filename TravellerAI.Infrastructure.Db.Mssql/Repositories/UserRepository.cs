@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TravellerAI.Core.Repositories;
 using TravellerAI.Domain.Entities;
-using TravellerAI.Domain.Exceptions;
+using TravellerAI.Core.Exceptions;
 using TravellerAI.Infrastructure.Db.Mssql.Context;
 
 namespace TravellerAI.Infrastructure.Db.Mssql.Repositories;
@@ -28,7 +28,7 @@ public class UserRepository : Repository<UserEntity>, IUserRepository
         }
 
         user.Password = newPassword;
-        await Context.SaveChangesAsync();
+        await SaveChangesAsync();
 
         return true;
     }
@@ -39,7 +39,7 @@ public class UserRepository : Repository<UserEntity>, IUserRepository
 
         user.FirstName = firstName;
         user.LastName = lastName;
-        await Context.SaveChangesAsync();
+        await SaveChangesAsync();
     }
 
     public async Task UpdateEmailAsync(Guid userId, string email)
@@ -48,14 +48,14 @@ public class UserRepository : Repository<UserEntity>, IUserRepository
 
         user.Email = email;
         user.IsEmailConfirmed = false;
-        await Context.SaveChangesAsync();
+        await SaveChangesAsync();
     }
 
     public async Task<Guid> RemoveUserAsync(Guid userId)
     {
         if (!await DeleteAsync(userId))
         {
-            throw new ResourceNotFoundException($"User {userId} not found");
+            throw new NotFoundException("User", userId);
         }
 
         return userId;
@@ -69,6 +69,6 @@ public class UserRepository : Repository<UserEntity>, IUserRepository
     private async Task<UserEntity> GetRequiredUserAsync(Guid userId)
     {
         return await GetByIdAsync(userId)
-               ?? throw new ResourceNotFoundException($"User {userId} not found");
+               ?? throw new NotFoundException("User", userId);
     }
 }

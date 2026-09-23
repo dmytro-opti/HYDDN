@@ -1,22 +1,20 @@
 using MediatR;
 using TravellerAI.Core.Interfaces;
-using TravellerAI.Domain.Exceptions;
-using TravellerAI.Domain.Models;
 
 namespace TravellerAI.Core.Features.BuildJourneyCommand;
 
 public class BuildJourneyCommandHandler : IRequestHandler<BuildJourneyCommand, Guid>
 {
     private readonly IJourneyService _journeyService;
-    private readonly IUserService _userService;
     
-    public BuildJourneyCommandHandler(IJourneyService journeyService, IUserService userService)
+    public BuildJourneyCommandHandler(IJourneyService journeyService)
     {
         _journeyService = journeyService;
-        _userService = userService;
     }
-    public async Task<Guid> Handle(BuildJourneyCommand command, CancellationToken cancellationToken)
+
+    public Task<Guid> Handle(BuildJourneyCommand command, CancellationToken cancellationToken)
     {
-        return Guid.NewGuid();
+        // user existence is checked by the service
+        return _journeyService.CreateJourney(command);
     }
 }

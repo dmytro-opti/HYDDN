@@ -1,4 +1,5 @@
 using FluentValidation;
+using static TravellerAI.Core.Constants.Validation;
 
 namespace TravellerAI.Core.Features.AddTransportCommand;
 
@@ -18,12 +19,17 @@ public class AddTransportCommandValidator : AbstractValidator<AddTransportComman
             .WithMessage("Invalid transport type");
         RuleFor(x => x.Company)
             .NotEmpty()
-            .WithMessage("Company cannot be empty");
+            .WithMessage("Company cannot be empty")
+            .MaximumLength(MaxTitleLength)
+            .WithMessage($"Company cannot exceed {MaxTitleLength} characters");
         RuleFor(x => x.SeatClass)
             .IsInEnum()
             .WithMessage("Invalid seat class");
         RuleFor(x => x.SeatCount)
-            .GreaterThan(0)
-            .WithMessage("Seat count must be greater than 0");
+            .GreaterThanOrEqualTo(MinSeatCount)
+            .WithMessage($"Seat count must be at least {MinSeatCount}");
+        RuleFor(x => x.Price)
+            .GreaterThanOrEqualTo(MinPrice)
+            .WithMessage($"Price must be greater than or equal {MinPrice}");
     }
 }

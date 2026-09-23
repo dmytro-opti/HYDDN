@@ -15,7 +15,7 @@ public class UserInfoEntity : BaseEntity
     public List<string> Genders { get; set; } = new();
     public string? Destination { get; set; }
     public List<string> Point { get; set; } = new();
-    public DateTime JourneyDate { get; set; }
+    public DateTime? JourneyDate { get; set; }
     public List<string> ChoosenActivity { get; set; } = new();
     public List<string> ChoosenTrip { get; set; } = new();
     public List<string> MoneyAmount { get; set; } = new();

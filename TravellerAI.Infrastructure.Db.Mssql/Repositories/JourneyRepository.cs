@@ -31,7 +31,7 @@ public class JourneyRepository : Repository<JourneyEntity>, IJourneyRepository
         }
 
         DbSet.Remove(journey);
-        await Context.SaveChangesAsync(cancellationToken);
+        await SaveChangesAsync(cancellationToken);
 
         return true;
     }

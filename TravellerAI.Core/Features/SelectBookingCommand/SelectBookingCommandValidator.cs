@@ -7,16 +7,13 @@ public class SelectBookingCommandValidator : AbstractValidator<SelectBookingComm
     public SelectBookingCommandValidator()
     {
         RuleFor(input => input.UserId)
-            .NotNull()
-            .Must(x => Guid.TryParse(x.ToString(), out Guid _))
-            .WithMessage("UserId cannot be null");
+            .NotEmpty()
+            .WithMessage("UserId cannot be empty");
         RuleFor(input => input.BookingId)
-            .NotNull()
-            .Must(x => Guid.TryParse(x.ToString(), out Guid _))
-            .WithMessage("BookingId cannot be null");
+            .NotEmpty()
+            .WithMessage("BookingId cannot be empty");
         RuleFor(input => input.TripId)
-            .NotNull()
-            .Must(x => Guid.TryParse(x.ToString(), out Guid _))
-            .WithMessage("TripId cannot be null");
+            .NotEmpty()
+            .WithMessage("TripId cannot be empty");
     }
 }

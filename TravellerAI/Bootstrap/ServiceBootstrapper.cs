@@ -22,6 +22,8 @@ public static class ServiceBootstrapper
         services.AddScoped(typeof(ITripService), typeof(TripService));
         services.AddScoped(typeof(IBookingService), typeof(BookingService));
         services.AddScoped(typeof(ITransportService), typeof(TransportService));
+        services.AddScoped(typeof(IBudgetService), typeof(BudgetService));
+        services.AddScoped(typeof(ILocationService), typeof(LocationService));
 
         return services;
     }

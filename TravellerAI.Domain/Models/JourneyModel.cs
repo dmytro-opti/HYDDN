@@ -9,6 +9,8 @@ public class JourneyModel
     public string Title { get; set; }
     public string Description { get; set; }
     public PeriodModel Period { get; set; }
+    public List<string> Members { get; set; }
+    public BudgetModel Budget { get; set; }
     public UserModel User { get; set; }
     public IEnumerable<TripModel> Trips { get; set; }
 }

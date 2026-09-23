@@ -18,6 +18,5 @@ public class ActivityEntity : BaseEntity
     public Guid? LocationId { get; set; }
     public virtual LocationEntity? Location { get; set; }
 
-    public Guid? ReviewId { get; set; }
-    public virtual ReviewEntity? Review { get; set; }
+    public virtual ICollection<ReviewEntity> Reviews { get; set; } = new List<ReviewEntity>();
 }
