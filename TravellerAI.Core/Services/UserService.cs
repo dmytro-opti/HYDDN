@@ -68,4 +68,9 @@ public class UserService : IUserService
     {
         throw new NotImplementedException();
     }
+
+    public Task<bool> UpdateUserProfileAsync(UserModel user)
+    {
+        throw new NotImplementedException();
+    }
 }
