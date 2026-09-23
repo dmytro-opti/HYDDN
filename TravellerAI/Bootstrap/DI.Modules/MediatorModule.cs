@@ -3,7 +3,6 @@ using FluentValidation;
 using MediatR;
 using Optimove.OptiCustomersService.WebHost.Bootstrap.MediatR.Pipelines;
 using System.Reflection;
-using TravellerAI.Core.Features.AddBookingCommand;
 
 namespace Optimove.OptiCustomersService.WebHost.Bootstrap.DI.Modules;
 
@@ -14,7 +13,8 @@ public class MediatorModule : Autofac.Module
         builder.RegisterAssemblyTypes(typeof(IMediator).GetTypeInfo().Assembly)
             .AsImplementedInterfaces();
 
-        var domainAssembly = typeof(AddBookingCommand).GetTypeInfo().Assembly;
+        // assembly with commands, handlers and validators
+        var domainAssembly = typeof(TravellerAI.Core.Constants).GetTypeInfo().Assembly;
 
         // Register all the Command classes (they implement IRequestHandler) in assembly holding the Commands
         builder.RegisterAssemblyTypes(domainAssembly)

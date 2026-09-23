@@ -3,18 +3,16 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TravellerAI.Auth;
-using TravellerAI.Core.Features.SelectBookingCommand;
-using TravellerAI.Core.Features.UpdateBookingCommand;
+using TravellerAI.Core.Features.Bookings.GetBookingCommand;
+using TravellerAI.Core.Features.Bookings.PayBookingCommand;
+using TravellerAI.Domain.ViewModels;
 using TravellerAI.Domain.ViewModels.Requests;
 
 namespace TravellerAI.WebApi.Controllers;
 
 /// <summary>
-/// Trip bookings.
+/// Hotel bookings. They are created and changed through the journey hotels endpoints.
 /// </summary>
-/// <remarks>
-/// Exceptions are translated to HTTP responses by GlobalExceptionHandler.
-/// </remarks>
 [ApiController]
 [Authorize]
 [Route("api/bookings")]
@@ -31,50 +29,35 @@ public class BookingController : ControllerBase
     }
 
     /// <summary>
-    /// Updates booking place, room, guests, dates and payment method.
+    /// Booking of the current user.
     /// </summary>
-    [HttpPut("{bookingId:guid}")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [HttpGet("{bookingId:guid}")]
+    [ProducesResponseType(typeof(BookingViewModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<bool>> Update(Guid bookingId, [FromBody] UpdateBookingRequest request,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<BookingViewModel>> Get(Guid bookingId, CancellationToken cancellationToken)
     {
-        var command = _mapper.Map<UpdateBookingCommand>(request);
-        command.BookingId = bookingId;
-        command.UserId = User.GetUserId();
+        var booking = await _mediator.Send(new GetBookingCommand { BookingId = bookingId, UserId = User.GetUserId() }, cancellationToken);
 
-        return await _mediator.Send(command, cancellationToken);
+        return _mapper.Map<BookingViewModel>(booking);
     }
 
     /// <summary>
-    /// Selects (freezes) the trip booking. Returns 422 when the booking is not valid anymore
-    /// (closed, past dates or the place is already taken).
+    /// Pays the booking: it becomes confirmed and its dates cannot be changed anymore.
     /// </summary>
-    [HttpPost("{bookingId:guid}/select")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [HttpPost("{bookingId:guid}/pay")]
+    [ProducesResponseType(typeof(BookingViewModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
-    public async Task<ActionResult<bool>> Select(Guid bookingId, [FromBody] SelectBookingRequest request,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<BookingViewModel>> Pay(Guid bookingId, [FromBody] PayBookingRequest request, CancellationToken cancellationToken)
     {
-        var command = _mapper.Map<SelectBookingCommand>(request);
-        command.BookingId = bookingId;
-        command.UserId = User.GetUserId();
-
-        var isSelected = await _mediator.Send(command, cancellationToken);
-        if (!isSelected)
+        var booking = await _mediator.Send(new PayBookingCommand
         {
-            return Problem(
-                title: "Booking is not valid",
-                detail: $"Booking {bookingId} cannot be selected: it is closed, has past dates or the place is already taken",
-                statusCode: StatusCodes.Status422UnprocessableEntity);
-        }
+            BookingId = bookingId,
+            UserId = User.GetUserId(),
+            PaymentMethod = request.PaymentMethod
+        }, cancellationToken);
 
-        return isSelected;
+        return _mapper.Map<BookingViewModel>(booking);
     }
 }

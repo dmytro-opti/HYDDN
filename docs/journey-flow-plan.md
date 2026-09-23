@@ -1,5 +1,29 @@
 # Journey flow — gap analysis and implementation plan
 
+## Implementation status (2026-09-23)
+
+Implemented and verified end to end (migration `JourneyFlow`, seed data, full wizard scenario):
+
+| Step | Endpoint(s) | Rules |
+|---|---|---|
+| 1 Details (draft) | `POST /api/journeys`, `GET /api/journeys?approved=false`, `GET/DELETE /api/journeys/{id}` | journey starts with `Approved = false` |
+| 2 Period | `PUT /api/journeys/{id}/period` | not in the past, ≥ 1 night, ≤ 30 days; days follow the period |
+| 3 Country | `PUT /api/journeys/{id}/country`, `GET /api/countries` | cannot change while hotels / trips exist |
+| 4 Hotels | `GET .../hotels/available`, `POST/PUT/DELETE .../hotels` | inside the period, journey country, capacity, availability, no overlap; stays must cover every night; several stays = hotel switch |
+| 5 Day trips | `GET .../days/{date}/trips`, `PUT/DELETE .../days/{date}`, `POST/PUT/DELETE/GET /api/trips` | trip = ordered locations / activities, one country and city, ≤ 30 km between stops, ≤ 80 km per day; starts at the hotel of the previous night, finishes at the hotel of the coming night (switch day: old → new hotel) |
+| 6 Approve | `POST .../approve`, `POST .../unapprove`, `GET .../progress` | `Approved` flag instead of a publish status; approved journeys are read-only (409) and hotel bookings frozen; unapprove only before the start date |
+| Supporting | notifications, booking pay, transport search, journey transports, members, budget, account deletion | |
+
+**Order change:** hotels are selected **before** day trips, because every trip starts and ends at a hotel.
+
+**Open items:** admin catalog CRUD (countries, locations, places, activities), email confirmation / password reset,
+completion job for finished journeys, multi-city journeys (a trip is limited to one city, so a hotel switch
+can only move within the same city — see below).
+
+---
+
+## Original plan (before implementation)
+
 Goal: a client builds a journey step by step and publishes it:
 
 1. **Create** the journey (title, description) — it starts as a *Draft*.

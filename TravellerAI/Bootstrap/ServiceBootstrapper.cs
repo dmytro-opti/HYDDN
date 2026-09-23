@@ -36,6 +36,7 @@ public static class ServiceBootstrapper
         services.AddScoped(typeof(INotificationService), typeof(NotificationService));
         services.AddScoped(typeof(IMapService), typeof(MapService));
         services.AddScoped(typeof(IValidationService), typeof(ValidationService));
+        services.AddScoped(typeof(ICatalogService), typeof(CatalogService));
 
         return services;
     }

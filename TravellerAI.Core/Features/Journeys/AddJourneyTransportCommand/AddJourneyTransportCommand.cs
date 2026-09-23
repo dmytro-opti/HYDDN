@@ -1,0 +1,20 @@
+using MediatR;
+using TravellerAI.Domain.Enums;
+using TravellerAI.Domain.Models;
+
+namespace TravellerAI.Core.Features.Journeys.AddJourneyTransportCommand;
+
+/// <summary>
+/// Transport to the country or between cities (optional).
+/// </summary>
+public class AddJourneyTransportCommand : IRequest<TransportModel>
+{
+    public Guid UserId { get; set; }
+    public Guid JourneyId { get; set; }
+    public TransportType Type { get; set; }
+    public string Company { get; set; }
+    public SeatClass SeatClass { get; set; }
+    public int SeatCount { get; set; }
+    public decimal Price { get; set; }
+    public PeriodModel? Period { get; set; }
+}

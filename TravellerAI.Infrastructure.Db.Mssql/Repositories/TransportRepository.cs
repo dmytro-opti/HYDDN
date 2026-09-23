@@ -11,8 +11,8 @@ public class TransportRepository : Repository<TransportEntity>, ITransportReposi
     {
     }
 
-    public async Task<IReadOnlyList<TransportEntity>> GetByTripAsync(Guid tripId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<TransportEntity>> GetByJourneyAsync(Guid journeyId, CancellationToken cancellationToken = default)
     {
-        return await DbSet.Where(t => t.TripId == tripId).ToListAsync(cancellationToken);
+        return await DbSet.Where(t => t.JourneyId == journeyId).ToListAsync(cancellationToken);
     }
 }

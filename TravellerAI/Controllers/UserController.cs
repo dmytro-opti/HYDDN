@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using TravellerAI.Auth;
 using TravellerAI.Core.Features.GetUserProfileCommand;
 using TravellerAI.Core.Features.UpdateUserProfileCommand;
+using TravellerAI.Core.Features.User.DeleteAccountCommand;
 using TravellerAI.Core.Features.User.UpdateUserEmailCommand;
 using TravellerAI.Domain.ViewModels;
 using TravellerAI.Domain.ViewModels.Requests;
@@ -81,6 +82,20 @@ public class UserController : ControllerBase
         command.UserId = User.GetUserId();
 
         await _mediator.Send(command, cancellationToken);
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Deletes the account and all user data. The current password is required.
+    /// </summary>
+    [HttpDelete("me")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountRequest request, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new DeleteAccountCommand { UserId = User.GetUserId(), Password = request.Password }, cancellationToken);
 
         return NoContent();
     }

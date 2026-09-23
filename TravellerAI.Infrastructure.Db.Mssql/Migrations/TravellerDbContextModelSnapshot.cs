@@ -367,13 +367,53 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                     b.ToTable("Countries", (string)null);
                 });
 
+            modelBuilder.Entity("TravellerAI.Domain.Entities.JourneyDayEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("JourneyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("TripId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TripId");
+
+                    b.HasIndex("JourneyId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("JourneyDays", (string)null);
+                });
+
             modelBuilder.Entity("TravellerAI.Domain.Entities.JourneyEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("Approved")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid?>("BudgetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CountryId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Created")
@@ -405,6 +445,8 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                     b.HasIndex("BudgetId")
                         .IsUnique()
                         .HasFilter("[BudgetId] IS NOT NULL");
+
+                    b.HasIndex("CountryId");
 
                     b.HasIndex("UserId");
 
@@ -633,7 +675,7 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                     b.Property<long>("Duration")
                         .HasColumnType("bigint");
 
-                    b.Property<Guid?>("JourneyId")
+                    b.Property<Guid>("JourneyId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Price")
@@ -646,9 +688,6 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                     b.Property<int>("SeatCount")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("TripId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
@@ -658,8 +697,6 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("JourneyId");
-
-                    b.HasIndex("TripId");
 
                     b.ToTable("Transports", null, t =>
                         {
@@ -673,17 +710,26 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("BookingId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<Guid?>("BudgetId")
+                    b.Property<Guid>("CountryId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("JourneyId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<double>("DistanceKm")
+                        .HasColumnType("float");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -693,9 +739,6 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                     b.Property<double>("Rating")
                         .HasColumnType("float");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("Updated")
                         .HasColumnType("datetime2");
 
@@ -704,19 +747,50 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BookingId")
-                        .IsUnique()
-                        .HasFilter("[BookingId] IS NOT NULL");
-
-                    b.HasIndex("BudgetId")
-                        .IsUnique()
-                        .HasFilter("[BudgetId] IS NOT NULL");
-
-                    b.HasIndex("JourneyId");
-
                     b.HasIndex("UserId");
 
+                    b.HasIndex("CountryId", "City", "IsPublic");
+
                     b.ToTable("Trips", (string)null);
+                });
+
+            modelBuilder.Entity("TravellerAI.Domain.Entities.TripStopEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ActivityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double>("DistanceFromPreviousKm")
+                        .HasColumnType("float");
+
+                    b.Property<Guid>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TripId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId");
+
+                    b.HasIndex("LocationId");
+
+                    b.HasIndex("TripId", "Order")
+                        .IsUnique();
+
+                    b.ToTable("TripStops", (string)null);
                 });
 
             modelBuilder.Entity("TravellerAI.Domain.Entities.UserEntity", b =>
@@ -1086,11 +1160,33 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("TravellerAI.Domain.Entities.JourneyDayEntity", b =>
+                {
+                    b.HasOne("TravellerAI.Domain.Entities.JourneyEntity", "Journey")
+                        .WithMany("Days")
+                        .HasForeignKey("JourneyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TravellerAI.Domain.Entities.TripEntity", "Trip")
+                        .WithMany("Days")
+                        .HasForeignKey("TripId");
+
+                    b.Navigation("Journey");
+
+                    b.Navigation("Trip");
+                });
+
             modelBuilder.Entity("TravellerAI.Domain.Entities.JourneyEntity", b =>
                 {
                     b.HasOne("TravellerAI.Domain.Entities.BudgetEntity", "Budget")
                         .WithOne()
                         .HasForeignKey("TravellerAI.Domain.Entities.JourneyEntity", "BudgetId");
+
+                    b.HasOne("TravellerAI.Domain.Entities.CountryEntity", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TravellerAI.Domain.Entities.UserEntity", "User")
                         .WithMany("Journeys")
@@ -1118,6 +1214,8 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                         });
 
                     b.Navigation("Budget");
+
+                    b.Navigation("Country");
 
                     b.Navigation("Period");
 
@@ -1191,11 +1289,7 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                 {
                     b.HasOne("TravellerAI.Domain.Entities.JourneyEntity", "Journey")
                         .WithMany("Transports")
-                        .HasForeignKey("JourneyId");
-
-                    b.HasOne("TravellerAI.Domain.Entities.TripEntity", "Trip")
-                        .WithMany("Transports")
-                        .HasForeignKey("TripId")
+                        .HasForeignKey("JourneyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1221,23 +1315,15 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                     b.Navigation("Journey");
 
                     b.Navigation("Period");
-
-                    b.Navigation("Trip");
                 });
 
             modelBuilder.Entity("TravellerAI.Domain.Entities.TripEntity", b =>
                 {
-                    b.HasOne("TravellerAI.Domain.Entities.BookingEntity", "Booking")
-                        .WithOne("Trip")
-                        .HasForeignKey("TravellerAI.Domain.Entities.TripEntity", "BookingId");
-
-                    b.HasOne("TravellerAI.Domain.Entities.BudgetEntity", "Budget")
-                        .WithOne()
-                        .HasForeignKey("TravellerAI.Domain.Entities.TripEntity", "BudgetId");
-
-                    b.HasOne("TravellerAI.Domain.Entities.JourneyEntity", "Journey")
-                        .WithMany("Trips")
-                        .HasForeignKey("JourneyId");
+                    b.HasOne("TravellerAI.Domain.Entities.CountryEntity", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("TravellerAI.Domain.Entities.UserEntity", "User")
                         .WithMany("Trips")
@@ -1245,34 +1331,34 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("TravellerAI.Domain.Entities.Owned.Period", "Period", b1 =>
-                        {
-                            b1.Property<Guid>("TripEntityId")
-                                .HasColumnType("uniqueidentifier");
-
-                            b1.Property<DateTime>("End")
-                                .HasColumnType("datetime2");
-
-                            b1.Property<DateTime>("Start")
-                                .HasColumnType("datetime2");
-
-                            b1.HasKey("TripEntityId");
-
-                            b1.ToTable("Trips");
-
-                            b1.WithOwner()
-                                .HasForeignKey("TripEntityId");
-                        });
-
-                    b.Navigation("Booking");
-
-                    b.Navigation("Budget");
-
-                    b.Navigation("Journey");
-
-                    b.Navigation("Period");
+                    b.Navigation("Country");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TravellerAI.Domain.Entities.TripStopEntity", b =>
+                {
+                    b.HasOne("TravellerAI.Domain.Entities.ActivityEntity", "Activity")
+                        .WithMany()
+                        .HasForeignKey("ActivityId");
+
+                    b.HasOne("TravellerAI.Domain.Entities.LocationEntity", "Location")
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TravellerAI.Domain.Entities.TripEntity", "Trip")
+                        .WithMany("Stops")
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Activity");
+
+                    b.Navigation("Location");
+
+                    b.Navigation("Trip");
                 });
 
             modelBuilder.Entity("TravellerAI.Domain.Entities.UserEntity", b =>
@@ -1354,11 +1440,6 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                     b.Navigation("Reviews");
                 });
 
-            modelBuilder.Entity("TravellerAI.Domain.Entities.BookingEntity", b =>
-                {
-                    b.Navigation("Trip");
-                });
-
             modelBuilder.Entity("TravellerAI.Domain.Entities.CountryEntity", b =>
                 {
                     b.Navigation("Locations");
@@ -1368,9 +1449,9 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
                 {
                     b.Navigation("Bookings");
 
-                    b.Navigation("Transports");
+                    b.Navigation("Days");
 
-                    b.Navigation("Trips");
+                    b.Navigation("Transports");
                 });
 
             modelBuilder.Entity("TravellerAI.Domain.Entities.PlaceEntity", b =>
@@ -1382,7 +1463,9 @@ namespace TravellerAI.Infrastructure.Db.Mssql.Migrations
 
             modelBuilder.Entity("TravellerAI.Domain.Entities.TripEntity", b =>
                 {
-                    b.Navigation("Transports");
+                    b.Navigation("Days");
+
+                    b.Navigation("Stops");
                 });
 
             modelBuilder.Entity("TravellerAI.Domain.Entities.UserEntity", b =>

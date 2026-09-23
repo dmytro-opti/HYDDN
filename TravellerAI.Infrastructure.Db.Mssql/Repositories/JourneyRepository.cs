@@ -18,10 +18,9 @@ public class JourneyRepository : Repository<JourneyEntity>, IJourneyRepository
 
     public override async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        // Dependents use ClientSetNull, so they must be loaded for EF Core to detach them from the journey
+        // bookings (hotel history) use ClientSetNull, so they are loaded to be detached from the journey;
+        // days and transports are removed by database cascade
         var journey = await DbSet
-            .Include(j => j.Trips)
-            .Include(j => j.Transports)
             .Include(j => j.Bookings)
             .FirstOrDefaultAsync(j => j.Id == id, cancellationToken);
 

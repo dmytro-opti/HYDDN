@@ -18,6 +18,8 @@ public class TravellerDbContext : IdentityDbContext<ApplicationUser, IdentityRol
     public DbSet<UserInfoEntity> UserInfos => Set<UserInfoEntity>();
     public DbSet<JourneyEntity> Journeys => Set<JourneyEntity>();
     public DbSet<TripEntity> Trips => Set<TripEntity>();
+    public DbSet<TripStopEntity> TripStops => Set<TripStopEntity>();
+    public DbSet<JourneyDayEntity> JourneyDays => Set<JourneyDayEntity>();
     public DbSet<BookingEntity> Bookings => Set<BookingEntity>();
     public DbSet<BudgetEntity> Budgets => Set<BudgetEntity>();
     public DbSet<TransportEntity> Transports => Set<TransportEntity>();
@@ -199,6 +201,30 @@ public class TravellerDbContext : IdentityDbContext<ApplicationUser, IdentityRol
                 .WithOne()
                 .HasForeignKey<JourneyEntity>(j => j.BudgetId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
+
+            builder.HasOne(j => j.Country)
+                .WithMany()
+                .HasForeignKey(j => j.CountryId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<JourneyDayEntity>(builder =>
+        {
+            builder.ToTable("JourneyDays");
+            builder.Property(d => d.Date).HasColumnType("date");
+            builder.HasIndex(d => new { d.JourneyId, d.Date }).IsUnique();
+
+            builder.HasOne(d => d.Journey)
+                .WithMany(j => j.Days)
+                .HasForeignKey(d => d.JourneyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // NoAction in DB: Users -> Trips -> days would be a second cascade path from Users;
+            // trips scheduled in journeys cannot be deleted (TripService)
+            builder.HasOne(d => d.Trip)
+                .WithMany(t => t.Days)
+                .HasForeignKey(d => d.TripId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
     }
 
@@ -208,27 +234,40 @@ public class TravellerDbContext : IdentityDbContext<ApplicationUser, IdentityRol
         {
             builder.ToTable("Trips");
             builder.Property(t => t.Name).HasMaxLength(200).IsRequired();
-            builder.OwnsOne(t => t.Period);
+            builder.Property(t => t.Description).HasMaxLength(500);
+            builder.Property(t => t.City).HasMaxLength(100).IsRequired();
+            builder.HasIndex(t => new { t.CountryId, t.City, t.IsPublic });
 
+            // author
             builder.HasOne(t => t.User)
                 .WithMany(u => u.Trips)
                 .HasForeignKey(t => t.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // NoAction in DB: SQL Server does not allow a second cascade path User -> Journey -> Trip
-            builder.HasOne(t => t.Journey)
-                .WithMany(j => j.Trips)
-                .HasForeignKey(t => t.JourneyId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+            builder.HasOne(t => t.Country)
+                .WithMany()
+                .HasForeignKey(t => t.CountryId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
-            builder.HasOne(t => t.Budget)
-                .WithOne()
-                .HasForeignKey<TripEntity>(t => t.BudgetId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+        modelBuilder.Entity<TripStopEntity>(builder =>
+        {
+            builder.ToTable("TripStops");
+            builder.HasIndex(s => new { s.TripId, s.Order }).IsUnique();
 
-            builder.HasOne(t => t.Booking)
-                .WithOne(b => b.Trip)
-                .HasForeignKey<TripEntity>(t => t.BookingId)
+            builder.HasOne(s => s.Trip)
+                .WithMany(t => t.Stops)
+                .HasForeignKey(s => s.TripId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(s => s.Location)
+                .WithMany()
+                .HasForeignKey(s => s.LocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(s => s.Activity)
+                .WithMany()
+                .HasForeignKey(s => s.ActivityId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
@@ -287,15 +326,10 @@ public class TravellerDbContext : IdentityDbContext<ApplicationUser, IdentityRol
             builder.ToTable(t => t.HasCheckConstraint("CK_Transports_SeatCount", "[SeatCount] >= 0"));
             builder.OwnsOne(t => t.Period);
 
-            builder.HasOne(t => t.Trip)
-                .WithMany(tr => tr.Transports)
-                .HasForeignKey(t => t.TripId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             builder.HasOne(t => t.Journey)
                 .WithMany(j => j.Transports)
                 .HasForeignKey(t => t.JourneyId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 

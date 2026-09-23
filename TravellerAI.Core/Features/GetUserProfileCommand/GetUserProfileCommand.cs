@@ -1,5 +1,4 @@
 using MediatR;
-using TravellerAI.Core.Features.BuildJourneyCommand;
 using TravellerAI.Domain.Models;
 
 namespace TravellerAI.Core.Features.GetUserProfileCommand;

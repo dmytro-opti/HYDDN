@@ -1,10 +1,6 @@
 using AutoMapper;
-using TravellerAI.Core.Features.AddBookingCommand;
 using TravellerAI.Core.Features.Auth.RegisterUserCommand;
-using TravellerAI.Core.Features.UpdateBookingCommand;
-using TravellerAI.Core.Features.UpdateTripCommand;
 using TravellerAI.Core.Features.UpdateUserProfileCommand;
-using TravellerAI.Domain.Enums;
 using TravellerAI.Domain.Models;
 
 namespace TravellerAI.Core.Mapping;
@@ -36,22 +32,7 @@ public class MappingCommandsProfile : Profile
             .ForMember(m => m.ChosenTrips, o => o.MapFrom(c => c.ChosenTripIds))
             .ForMember(m => m.PreferredCountries, o => o.MapFrom(c => c.PreferredCountryIds));
 
-        CreateMap<UpdateTripCommand, TripModel>(MemberList.Source)
-            // used for the ownership check only
-            .ForSourceMember(c => c.UserId, o => o.DoNotValidate())
-            // optional parts of the trip are changed only when they are sent
-            .ForMember(m => m.Booking, o => o.Condition(c => c.Booking != null))
-            .ForMember(m => m.Group, o => o.Condition(c => c.Group != null))
-            .ForMember(m => m.Map, o => o.Condition(c => c.Map != null));
-
-        CreateMap<AddBookingCommand, BookingModel>(MemberList.Source)
-            .ForMember(m => m.CheckInDate, o => o.MapFrom(c => c.Period.Start))
-            .ForMember(m => m.CheckOutDate, o => o.MapFrom(c => c.Period.End))
-            .ForMember(m => m.Status, o => o.MapFrom(_ => BookingStatus.Pending))
-            .ForSourceMember(c => c.TripId, o => o.DoNotValidate());
-
-        CreateMap<UpdateBookingCommand, BookingModel>(MemberList.Source)
-            .ForMember(m => m.CheckInDate, o => o.MapFrom(c => c.Period.Start))
-            .ForMember(m => m.CheckOutDate, o => o.MapFrom(c => c.Period.End));
+        CreateMap<Features.Trips.CreateTripCommand.CreateTripCommand, TripDraftModel>();
+        CreateMap<Features.Trips.UpdateTripCommand.UpdateTripCommand, TripDraftModel>();
     }
 }
