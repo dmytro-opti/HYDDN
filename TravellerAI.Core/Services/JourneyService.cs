@@ -1,5 +1,12 @@
+using AutoMapper;
+using TravellerAI.Core.Exceptions;
 using TravellerAI.Core.Features.BuildJourneyCommand;
 using TravellerAI.Core.Interfaces;
+using TravellerAI.Core.Repositories;
+using TravellerAI.Domain.Entities;
+using TravellerAI.Domain.Entities.Owned;
+using TravellerAI.Domain.Enums;
+using TravellerAI.Domain.Exceptions;
 using TravellerAI.Domain.Models;
 using TravellerAI.Domain.ViewModels;
 
@@ -7,38 +14,97 @@ namespace TravellerAI.Core.Services;
 
 public class JourneyService : IJourneyService
 {
-    public Task<Guid> CreateJourney(BuildJourneyCommand command)
+    private readonly IJourneyRepository _journeyRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly ILoggerService<JourneyService> _logger;
+    private readonly IMapper _mapper;
+
+    public JourneyService(IJourneyRepository journeyRepository, IUserRepository userRepository,
+        ILoggerService<JourneyService> logger, IMapper mapper)
     {
-        return Task.FromResult(Guid.NewGuid());
+        _journeyRepository = journeyRepository;
+        _userRepository = userRepository;
+        _logger = logger;
+        _mapper = mapper;
     }
 
-    Task<JourneyModel> IJourneyService.GetJourneyAsync(Guid tripId)
+    public async Task<Guid> CreateJourney(BuildJourneyCommand command)
     {
-        throw new NotImplementedException();
+        if (!await _userRepository.ExistsAsync(command.UserId))
+        {
+            throw new ResourceNotFoundException($"User {command.UserId} not found");
+        }
+
+        var journey = new JourneyEntity
+        {
+            UserId = command.UserId,
+            Title = command.Title,
+            Description = command.Description,
+            Status = JourneyStatus.Active,
+            Period = command.Period == null ? null : _mapper.Map<Period>(command.Period)
+        };
+
+        await _journeyRepository.AddAsync(journey);
+        _logger.Log(ErrorLevel.Low, $"Journey {journey.Id} was created for user {command.UserId}");
+
+        return journey.Id;
     }
 
-    public Task<Guid> GetJourney(Guid tripId)
+    public async Task<JourneyModel> GetJourneyAsync(Guid journeyId)
     {
-        return Task.FromResult(tripId);
+        var journey = await GetJourneyEntityAsync(journeyId);
+
+        return _mapper.Map<JourneyModel>(journey);
     }
 
-    public Task<Guid> DeleteJourney(Guid tripId)
+    public async Task<Guid> DeleteJourney(Guid journeyId)
     {
-        return Task.FromResult(tripId);
+        if (!await _journeyRepository.DeleteAsync(journeyId))
+        {
+            throw new ResourceNotFoundException($"Journey {journeyId} not found");
+        }
+
+        _logger.Log(ErrorLevel.Low, $"Journey {journeyId} was deleted");
+
+        return journeyId;
     }
 
-    public Task SelectPeriod(JourneyModel journey, PeriodViewModel period)
+    public async Task SelectPeriod(JourneyModel journey, PeriodViewModel period)
     {
-        throw new NotImplementedException();
+        if (period.Start >= period.End)
+        {
+            throw new BadRequestException("Period start must be before period end");
+        }
+
+        var entity = await GetJourneyEntityAsync(journey.Id);
+        entity.Period = new Period { Start = period.Start, End = period.End };
+        await _journeyRepository.UpdateAsync(entity);
+
+        journey.Period = _mapper.Map<PeriodModel>(entity.Period);
     }
 
     public Task SetMembers(JourneyModel journey, IEnumerable<string> members)
     {
+        // requires Group / members model which is not defined yet
         throw new NotImplementedException();
     }
 
     public Task AddTransport(JourneyModel journey, TransportViewModel transport)
     {
+        // transport has to be linked to a trip, but TransportViewModel does not carry a TripId yet
         throw new NotImplementedException();
+    }
+
+    private async Task<JourneyEntity> GetJourneyEntityAsync(Guid journeyId)
+    {
+        var journey = await _journeyRepository.GetByIdAsync(journeyId);
+
+        if (journey == null)
+        {
+            _logger.Log(ErrorLevel.Medium, $"Journey {journeyId} not found");
+            throw new ResourceNotFoundException($"Journey {journeyId} not found");
+        }
+
+        return journey;
     }
 }

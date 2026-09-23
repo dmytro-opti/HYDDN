@@ -1,4 +1,5 @@
 using AutoMapper;
+using TravellerAI.Core.Exceptions;
 using TravellerAI.Core.Interfaces;
 using TravellerAI.Core.Repositories;
 using TravellerAI.Domain.Enums;
@@ -12,14 +13,14 @@ public class UserService : IUserService
     private readonly IUserRepository _userRepository;
     private readonly ILoggerService<UserService> _logger;
     private readonly IMapper _mapper;
-    
+
     public UserService(IUserRepository userRepository, ILoggerService<UserService> logger, IMapper mapper)
     {
         _userRepository = userRepository;
         _logger = logger;
         _mapper = mapper;
     }
-    
+
     public async Task<UserModel> GetUserAsync(Guid userId)
     {
         var user = await _userRepository.GetUserAsync(userId);
@@ -29,18 +30,29 @@ public class UserService : IUserService
             _logger.Log(ErrorLevel.High, $"User {userId} not found");
             throw new ResourceNotFoundException($"User {userId} not found");
         }
-        
+
         return _mapper.Map<UserModel>(user);
     }
 
-    public Task<bool> UpdatePasswordAsync(Guid userId, string oldPassword, string newPassword)
+    public async Task<bool> UpdatePasswordAsync(Guid userId, string oldPassword, string newPassword)
     {
-        throw new NotImplementedException();
+        if (oldPassword == newPassword)
+        {
+            throw new BadRequestException("New password must differ from the old one");
+        }
+
+        var isUpdated = await _userRepository.UpdatePasswordAsync(userId, oldPassword, newPassword);
+
+        _logger.Log(isUpdated ? ErrorLevel.Low : ErrorLevel.Medium,
+            isUpdated ? $"User {userId} password was updated" : $"User {userId} password was not updated: old password mismatch");
+
+        return isUpdated;
     }
 
-    public Task UpdateNameAsync(Guid userId, string firstName, string lastName)
+    public async Task UpdateNameAsync(Guid userId, string firstName, string lastName)
     {
-        throw new NotImplementedException();
+        await _userRepository.UpdateNameAsync(userId, firstName.Trim(), lastName.Trim());
+        _logger.Log(ErrorLevel.Low, $"User {userId} name was updated successfully");
     }
 
     public async Task UpdateEmailAsync(Guid userId, string email)
@@ -52,20 +64,28 @@ public class UserService : IUserService
             _logger.Log(ErrorLevel.Low, $"User {userId} has already been updated");
             return;
         }
-        else
+
+        if (await _userRepository.IsEmailTakenAsync(email, userId))
         {
-            await _userRepository.UpdateEmailAsync(userId, email);
-            _logger.Log(ErrorLevel.Low, $"User {userId} was updated successfully");
+            throw new BadRequestException($"Email {email} is already in use");
         }
+
+        await _userRepository.UpdateEmailAsync(userId, email);
+        _logger.Log(ErrorLevel.Low, $"User {userId} was updated successfully");
     }
 
-    public Task RemoveUserAsync(Guid userId)
+    public async Task RemoveUserAsync(Guid userId)
     {
-        throw new NotImplementedException();
+        await _userRepository.RemoveUserAsync(userId);
+        _logger.Log(ErrorLevel.Low, $"User {userId} was removed");
     }
 
-    public Task<UserInfoModel> GetUserInfoAsync(Guid userId)
+    public async Task<UserInfoModel?> GetUserInfoAsync(Guid userId)
     {
-        throw new NotImplementedException();
+        var user = await _userRepository.GetUserAsync(userId)
+                   ?? throw new ResourceNotFoundException($"User {userId} not found");
+
+        // lazy loaded
+        return user.UserInfo == null ? null : _mapper.Map<UserInfoModel>(user.UserInfo);
     }
 }

@@ -33,6 +33,10 @@ public class AddBookingCommandHandler : IRequestHandler<AddBookingCommand, bool>
 
         trip.Booking = new BookingModel()
         {
+            UserId = command.UserId,
+            Period = command.Period,
+            Adults = command.Adults,
+            Children = command.Children,
             CheckInDate = command.Period.Start,
             CheckOutDate = command.Period.End,
             Status = BookingStatus.Pending
