@@ -4,7 +4,10 @@ using System;
 using System.Collections;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentValidation;
 using TravellerAI.Bootstrap.MediatR;
+using TravellerAI.Core.Exceptions;
+using TravellerAI.Domain.Exceptions;
 using ILogger = Serilog.ILogger;
 
 namespace Optimove.OptiCustomersService.WebHost.Bootstrap.MediatR.Pipelines;
@@ -22,11 +25,30 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
         _logger.Information("----- Handling command {CommandName} ({@Command})", request.GetType().GetGenericTypeName(), GetObjectProperties(request));
-        var response = await next();
-        _logger.Information("----- Command {CommandName} handled - response: {@Response}", request.GetGenericTypeName(), GetObjectProperties(response));
+        try
+        {
+            var response = await next();
+            _logger.Information("----- Command {CommandName} handled - response: {@Response}", request.GetGenericTypeName(), GetObjectProperties(response));
 
-        return response;
+            return response;
+        }
+        catch (Exception ex) when (IsExpected(ex))
+        {
+            _logger.Warning("----- Command {CommandName} rejected: {ExceptionType} {Message}", request.GetGenericTypeName(), ex.GetType().Name, ex.Message);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "----- Command {CommandName} failed", request.GetGenericTypeName());
+            throw;
+        }
     }
+
+    /// <summary>
+    /// Business / validation exceptions are expected outcomes and are logged without stack trace.
+    /// </summary>
+    private static bool IsExpected(Exception ex) =>
+        ex is ValidationException or BadRequestException or ForbiddenException or ConflictException or ResourceNotFoundException;
 
     private string GetObjectProperties(object obj)
     {

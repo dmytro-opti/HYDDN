@@ -9,11 +9,17 @@
     <ItemGroup>
       <PackageReference Include="AutoMapper" Version="16.1.1" />
       <PackageReference Include="MediatR" Version="11.1.0" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.31" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.31" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\TravellerAI.Core\TravellerAI.Core.csproj" />
       <ProjectReference Include="..\TravellerAI.Domain\TravellerAI.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Scripts\SeedTestData.sql" />
     </ItemGroup>
 
 </Project>

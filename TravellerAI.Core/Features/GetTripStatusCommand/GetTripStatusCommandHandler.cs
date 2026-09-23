@@ -1,8 +1,6 @@
 using MediatR;
-using MediatR.Pipeline;
 using TravellerAI.Core.Interfaces;
 using TravellerAI.Domain.Enums;
-
 
 namespace TravellerAI.Core.Features.GetTripStatusCommand;
 
@@ -15,13 +13,9 @@ public class GetTripStatusCommandHandler : IRequestHandler<GetTripStatusCommand,
         _tripService = tripService;
     }
     
-    public async Task<TripStatus> Handle(GetTripStatusCommand command, CancellationToken cancellationToken)
+    public Task<TripStatus> Handle(GetTripStatusCommand command, CancellationToken cancellationToken)
     {
-        var tripStatus = await _tripService.GetTripStatusAsync(command.TripId);
-        if (tripStatus == null)
-        {
-            throw new Exception($"Trip with id {command.TripId} not found");
-        }
-        return tripStatus;
+        // throws NotFoundException when the trip does not exist
+        return _tripService.GetTripStatusAsync(command.TripId);
     }
 }

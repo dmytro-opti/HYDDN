@@ -15,7 +15,7 @@ namespace TravellerAI.Domain.Models;
         public PeriodModel Period { get; set; }
         public DateTime CreatedAt { get; set; }
         public decimal TotalPrice { get; set; }
-        public string Currency { get; set; } 
+        public string Currency { get; set; } = "USD";
         public bool IsPaid { get; set; }
         public string PaymentMethod { get; set; }
         public int Adults { get; set; }

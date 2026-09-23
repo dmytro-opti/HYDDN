@@ -7,6 +7,7 @@ const PROXY_CONFIG = [
   {
     context: [
       "/user",
+      "/api",
    ],
     proxyTimeout: 10000,
     target: target,

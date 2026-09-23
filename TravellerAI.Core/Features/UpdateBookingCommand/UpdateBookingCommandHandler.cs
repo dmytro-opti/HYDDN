@@ -1,7 +1,7 @@
+using AutoMapper;
 using MediatR;
+using TravellerAI.Core.Exceptions;
 using TravellerAI.Core.Interfaces;
-using TravellerAI.Domain.Enums;
-using TravellerAI.Domain.Models;
 
 namespace TravellerAI.Core.Features.UpdateBookingCommand;
 
@@ -9,36 +9,27 @@ public class UpdateBookingCommandHandler : IRequestHandler<UpdateBookingCommand,
 {
     private readonly IBookingService _bookingService;
     private readonly IUserService _userService;
+    private readonly IMapper _mapper;
     
-    public UpdateBookingCommandHandler(IBookingService bookingService, IUserService userService)
+    public UpdateBookingCommandHandler(IBookingService bookingService, IUserService userService, IMapper mapper)
     {
         _bookingService = bookingService;
         _userService = userService;
+        _mapper = mapper;
     }
+
     public async Task<bool> Handle(UpdateBookingCommand command, CancellationToken cancellationToken)
     {
-        // check user availability
-        var user = await _userService.GetUserAsync(command.UserId);
-        if (user == null)
-        {
-            throw new Exception($"User {command.UserId} does not exist");
-        }
-        
-        // check booking
+        // both throw NotFoundException when missing
+        await _userService.GetUserAsync(command.UserId);
         var booking = await _bookingService.GetBookingModelAsync(command.BookingId);
-        if (booking == null)
+
+        if (booking.UserId != command.UserId)
         {
-            throw new Exception($"Booking {command.BookingId} does not exist");
+            throw new ForbiddenException($"Booking {command.BookingId} does not belong to user {command.UserId}");
         }
 
-        booking.PropertyId = command.PropertyId;
-        booking.RoomId = command.RoomId;
-        booking.PaymentMethod = command.PaymentMethod;
-        booking.CheckInDate = command.Period.Start;
-        booking.CheckOutDate = command.Period.End;
-        booking.Adults = command.Adults;
-        booking.Children = command.Children;
-        
+        _mapper.Map(command, booking);
 
         return await _bookingService.UpdateBookingAsync(booking);
     }

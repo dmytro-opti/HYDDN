@@ -16,7 +16,7 @@ public class UserInfoModel
     public List<string> Genders { get; set; }
     public string Destanation { get; set; }
     public List<string> Point { get; set; }
-    public DateTime JourneyDate { get; set; }
+    public DateTime? JourneyDate { get; set; }
     public List <string> ChoosenActivity {get; set;}
     public List <string> ChoosenTrip {get; set;}
     public List <string> MoneyAmount {get; set;} // Кількість грошей на подорож (мало, норм, багато)

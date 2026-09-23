@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using AutofacSerilogIntegration;
 using Microsoft.Extensions.Hosting;
+using TravellerAI.Core.Mapping;
 using TravellerAI.Mapping;
 using TravellerAI.Settings;
 
@@ -26,7 +27,8 @@ public class ApplicationBootstrapperModule : Module
         builder.RegisterModule(
             new AutomapperModule(
                 new MappingViewProfile(),
-                new MappingEntitiesProfile()
+                new MappingEntitiesProfile(),
+                new MappingCommandsProfile()
             ));
 
         builder.RegisterModule(new ConfigurationModule());

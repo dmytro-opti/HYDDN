@@ -6,5 +6,5 @@ namespace TravellerAI.Core.Features.GetUserProfileCommand;
 
 public class GetUserProfileCommand : IRequest<UserInfoModel>
 {
-    public Guid UserId;
+    public Guid UserId { get; set; }
 }

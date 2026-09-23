@@ -7,7 +7,7 @@ public class UpdateUserEmailCommandValidator : AbstractValidator<UpdateUserEmail
     public UpdateUserEmailCommandValidator()
     {
         RuleFor(input => input.UserId)
-            .NotNull().WithMessage("UserId cannot be null");
+            .NotEmpty().WithMessage("UserId cannot be empty");
         
         RuleFor(input => input.Email)
             .NotNull().EmailAddress().WithMessage("Email should be valid email");

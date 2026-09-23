@@ -12,6 +12,5 @@ public interface IJourneyService
     Task<Guid> DeleteJourney(Guid tripId);
     Task SelectPeriod(JourneyModel journey, PeriodViewModel period);
     Task SetMembers(JourneyModel journey, IEnumerable<string> members);
-    Task AddTransport(JourneyModel journey, TransportViewModel transport);
     Task<JourneyStatus> GetJourneyStatusAsync(Guid journeyId);
 }

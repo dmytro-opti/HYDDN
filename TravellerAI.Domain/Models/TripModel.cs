@@ -1,3 +1,5 @@
+using TravellerAI.Domain.Enums;
+
 namespace TravellerAI.Domain.Models;
 
 public class TripModel
@@ -9,8 +11,10 @@ public class TripModel
     public JourneyModel Journey { get; set; }
     public BudgetModel Budget { get; set; }
     public BookingModel Booking { get; set; }
+    public IEnumerable<TransportModel> Transports { get; set; }
     public DiscountModel Discount { get; set; }
     public MapModel Map { get; set; }
     public PeriodModel Period { get; set; }
     public double Rating { get; set; }
+    public TripStatus Status { get; set; }
 }

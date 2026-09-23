@@ -13,4 +13,5 @@ public class AddTransportCommand : IRequest<TransportModel>
     public string Company { get; set; }
     public SeatClass SeatClass { get; set; }
     public int SeatCount { get; set; }
+    public decimal Price { get; set; }
 }
