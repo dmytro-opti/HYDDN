@@ -1,4 +1,5 @@
 using TravellerAI.Core.Features.BuildJourneyCommand;
+using TravellerAI.Core.Features.GetJourneysCommand;
 using TravellerAI.Core.Interfaces;
 using TravellerAI.Domain.Models;
 using TravellerAI.Domain.ViewModels;
@@ -7,6 +8,11 @@ namespace TravellerAI.Core.Services;
 
 public class JourneyService : IJourneyService
 {
+    public Task<JourneyViewModel> CreateJourney(JourneyViewModel journey)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<Guid> CreateJourney(BuildJourneyCommand command)
     {
         return Task.FromResult(Guid.NewGuid());
@@ -38,6 +44,16 @@ public class JourneyService : IJourneyService
     }
 
     public Task AddTransport(JourneyModel journey, TransportViewModel transport)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<List<JourneyModel>> GetJourneys(GetJourneysCommand request)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<List<JourneyModel>> GetJourneys(GetJourneysCommand request)
     {
         throw new NotImplementedException();
     }

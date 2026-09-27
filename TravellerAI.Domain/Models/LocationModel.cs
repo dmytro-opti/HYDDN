@@ -6,4 +6,5 @@ public class LocationModel
     string City { get; set; }
     string Street { get; set; }
     string ZipCode { get; set; }
+    Guid LocationId { get; set; }
 }
